@@ -25,7 +25,7 @@ import {
 import { UpdateUserPayload } from "../interfaces";
 
 import GenerateOTP from "../utils/otp";
-// import sendMail from "../utils/sendMail";
+import sendMail from "../utils/sendMail";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let userRoute = [
@@ -69,9 +69,9 @@ export let userRoute = [
             expiresIn: "3m",
           }
         );
-        // sendMail(result.email, token);
-        // return response.response(result).code(201);
-        return token;
+        sendMail(result.email, token);
+        return response.response(result).code(201);
+        // return token;
       } catch (error) {
         return response.response(error).code(500);
       }

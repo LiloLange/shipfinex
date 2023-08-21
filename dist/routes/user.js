@@ -64,7 +64,7 @@ exports.userRoute = [
                 return token;
             }
             catch (error) {
-                throw error;
+                return response.response(error).code(500);
             }
         }),
     },
