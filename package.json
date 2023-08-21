@@ -40,5 +40,8 @@
     "mongoose": "^7.4.3",
     "nodemailer": "^6.9.4",
     "otp-generator": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
