@@ -1,0 +1,61 @@
+import Joi from "joi";
+
+export const createUserSchema = Joi.object({
+  firstName: Joi.string().required().messages({
+    "any.required": "Please provide first name.",
+  }),
+  lastName: Joi.string().required().messages({
+    "any.required": "Please provide last name.",
+  }),
+  email: Joi.string().email().required().messages({
+    "any.required": "Please provide email",
+    "string.email": "Please provide a valid email.",
+  }),
+  phoneNumber: Joi.string().required().messages({
+    "any.required": "Please provide phone number.",
+  }),
+  password: Joi.string().required().min(6).messages({
+    "any.required": "Please provide password.",
+    "string.min": "Password must be at least 6 characters.",
+  }),
+  role: Joi.string().required().messages({
+    "any.required": "Please provide role.",
+  }),
+  referralCode: Joi.string().optional(),
+});
+
+export const loginUserSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "any.required": "Please provide email",
+    "string.email": "Please provide a valid email.",
+  }),
+  password: Joi.string().required().min(6).messages({
+    "any.required": "Please provide password.",
+    "string.min": "Password must be at least 6 characters.",
+  }),
+});
+
+export const otpSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "any.required": "Please provide email",
+    "string.email": "Please provide a valid email.",
+  }),
+  otp: Joi.string().required().min(6).max(6).messages({
+    "any.required": "Please provide otp.",
+    "string.min": "OTP must be exactly 6 characters.",
+  }),
+});
+
+export const userUpdateSchema = Joi.object({
+  firstName: Joi.string().optional(),
+  email: Joi.string().email().messages({
+    "string.email": "Please provide a valid email.",
+  }),
+  password: Joi.string().min(6).messages({
+    "string.min": "Password must be at least 6 characters.",
+  }),
+  lastName: Joi.string().optional(),
+  phoneNumber: Joi.string().optional(),
+  role: Joi.string().optional(),
+  referralCode: Joi.string().optional(),
+});
