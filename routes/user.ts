@@ -69,7 +69,8 @@ export let userRoute = [
             expiresIn: "3m",
           }
         );
-        sendMail(result.email, token);
+        const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
+        sendMail(result.email, content);
         return response.response(result).code(201);
         // return token;
       } catch (error) {
@@ -111,10 +112,11 @@ export let userRoute = [
             const otp = GenerateOTP();
             user.otp = otp;
             const result = await user.save();
-
+            const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
+            sendMail(result.email, content);
             return response.response({
               msg: "OTP Code has just sent to your email.",
-              otp: result.otp,
+              // otp: result.otp,
             });
 
             //Generate and send OTP
