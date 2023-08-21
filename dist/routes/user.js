@@ -20,7 +20,7 @@ const config_1 = __importDefault(require("../config"));
 const user_1 = require("../validation/user");
 const user_2 = require("../swagger/user");
 const otp_1 = __importDefault(require("../utils/otp"));
-// import sendMail from "../utils/sendMail";
+const sendMail_1 = __importDefault(require("../utils/sendMail"));
 const options = { abortEarly: false, stripUnknown: true };
 exports.userRoute = [
     {
@@ -59,9 +59,9 @@ exports.userRoute = [
                 const token = jsonwebtoken_1.default.sign({ userId: result._id, email: result.email }, config_1.default.jwtSecret, {
                     expiresIn: "3m",
                 });
-                // sendMail(result.email, token);
-                // return response.response(result).code(201);
-                return token;
+                (0, sendMail_1.default)(result.email, token);
+                return response.response(result).code(201);
+                // return token;
             }
             catch (error) {
                 return response.response(error).code(500);
