@@ -157,7 +157,10 @@ exports.userRoute = [
                     const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
                         expiresIn: "1h",
                     });
-                    return response.response({ msg: token }).code(200);
+                    const fullName = user.firstName + user.middleName + user.lastName;
+                    return response
+                        .response({ token, fullName, role: user.role })
+                        .code(200);
                 }
             }
             return response.response({ msg: "OTP Verification Failed." }).code(400);

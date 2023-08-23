@@ -324,4 +324,15 @@ export let kycRoute = [
       },
     },
   },
+  {
+    method: "POST",
+    path: "/register1",
+    options: {
+      description: "Register User",
+      tags: ["api", "kyc"],
+    },
+    handler: async (request: Request, response: ResponseToolkit) => {
+      console.log(request.payload);
+    },
+  },
 ];

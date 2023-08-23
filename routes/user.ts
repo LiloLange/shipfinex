@@ -177,7 +177,10 @@ export let userRoute = [
               expiresIn: "1h",
             }
           );
-          return response.response({ msg: token }).code(200);
+          const fullName = user.firstName + user.middleName + user.lastName;
+          return response
+            .response({ token, fullName, role: user.role })
+            .code(200);
         }
       }
       return response.response({ msg: "OTP Verification Failed." }).code(400);

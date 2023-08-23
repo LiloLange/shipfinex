@@ -309,5 +309,16 @@ exports.kycRoute = [
             }),
         },
     },
+    {
+        method: "POST",
+        path: "/register1",
+        options: {
+            description: "Register User",
+            tags: ["api", "kyc"],
+        },
+        handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            console.log(request.payload);
+        }),
+    },
 ];
 //# sourceMappingURL=kyc.js.map

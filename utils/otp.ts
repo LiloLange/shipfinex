@@ -2,7 +2,8 @@ import OTPGenerator from "otp-generator";
 
 const OTP_LENGTH = 6;
 const OTP_CONFIG = {
-  upperCaseAlphabets: true,
+  digits: true,
+  upperCaseAlphabets: false,
   lowerCaseAlphabets: false,
   specialChars: false,
 };

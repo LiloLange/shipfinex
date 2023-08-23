@@ -12,6 +12,7 @@ const userSchema = new Schema({
     },
     middleName: {
         type: String,
+        default: "",
     },
     lastName: {
         type: String,
@@ -31,7 +32,6 @@ const userSchema = new Schema({
     },
     referralCode: {
         type: String,
-        required: true,
     },
     emailVerified: {
         type: Boolean,

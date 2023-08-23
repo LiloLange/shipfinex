@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const otp_generator_1 = __importDefault(require("otp-generator"));
 const OTP_LENGTH = 6;
 const OTP_CONFIG = {
-    upperCaseAlphabets: true,
+    digits: true,
+    upperCaseAlphabets: false,
     lowerCaseAlphabets: false,
     specialChars: false,
 };
