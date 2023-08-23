@@ -318,6 +318,7 @@ exports.kycRoute = [
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(request.payload);
+            return "Hello";
         }),
     },
 ];

@@ -333,6 +333,7 @@ export let kycRoute = [
     },
     handler: async (request: Request, response: ResponseToolkit) => {
       console.log(request.payload);
+      return "Hello";
     },
   },
 ];
