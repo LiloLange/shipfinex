@@ -1,6 +1,7 @@
 import { Request, ResponseToolkit } from "@hapi/hapi";
 import Jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import fs from "fs";
 
 import User from "../models/users";
 import config from "../config";
@@ -195,27 +196,23 @@ export let userRoute = [
       tags: ["api", "user"],
     },
     handler: async (request: Request, response: ResponseToolkit) => {
+      const success = fs.readFileSync("./utils/emailVeriffSucess.txt");
+      const failed = fs.readFileSync("./utils/emailVeriffFail.txt");
       const decoded = Jwt.decode(request.params.token);
       if (decoded === null) {
-        return response
-          .response({ msg: "Email Verification Failed" })
-          .code(400);
+        return failed.toLocaleString();
       }
       const currentTime = Date.now() / 1000;
       if (decoded.exp < currentTime) {
-        return response
-          .response({ msg: "Email Verification Failed" })
-          .code(400);
+        return failed.toLocaleString();
       }
       const user = await User.findById(decoded.userId);
       if (user) {
         user.emailVerified = true;
         await user.save();
-        return response
-          .response({ msg: "Email Verified Successfully." })
-          .code(200);
+        return success.toLocaleString();
       }
-      return response.response({ msg: "Email Verification Failed" }).code(400);
+      return failed.toLocaleString();
     },
   },
   {

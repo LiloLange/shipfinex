@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.userRoute = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const fs_1 = __importDefault(require("fs"));
 const users_1 = __importDefault(require("../models/users"));
 const config_1 = __importDefault(require("../config"));
 const user_1 = require("../validation/user");
@@ -175,27 +176,23 @@ exports.userRoute = [
             tags: ["api", "user"],
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            const success = fs_1.default.readFileSync("./utils/emailVeriffSucess.txt");
+            const failed = fs_1.default.readFileSync("./utils/emailVeriffFail.txt");
             const decoded = jsonwebtoken_1.default.decode(request.params.token);
             if (decoded === null) {
-                return response
-                    .response({ msg: "Email Verification Failed" })
-                    .code(400);
+                return failed.toLocaleString();
             }
             const currentTime = Date.now() / 1000;
             if (decoded.exp < currentTime) {
-                return response
-                    .response({ msg: "Email Verification Failed" })
-                    .code(400);
+                return failed.toLocaleString();
             }
             const user = yield users_1.default.findById(decoded.userId);
             if (user) {
                 user.emailVerified = true;
                 yield user.save();
-                return response
-                    .response({ msg: "Email Verified Successfully." })
-                    .code(200);
+                return success.toLocaleString();
             }
-            return response.response({ msg: "Email Verification Failed" }).code(400);
+            return failed.toLocaleString();
         }),
     },
     {

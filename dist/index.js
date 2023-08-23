@@ -101,7 +101,7 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!fs_1.default.existsSync(project)) {
         fs_1.default.mkdirSync(project);
     }
-    console.log("Updated!!!!");
+    console.log("Updated!!!!!");
     console.log(`🚀 Server running on ${server.info.uri} 🚀`);
     return server;
 });
