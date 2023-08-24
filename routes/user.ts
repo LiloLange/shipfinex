@@ -10,6 +10,7 @@ import {
   loginUserSchema,
   otpSchema,
   userUpdateSchema,
+  getAllUserSchema,
 } from "../validation/user";
 
 import {
@@ -252,15 +253,53 @@ export let userRoute = [
     path: "/all",
     options: {
       auth: "jwt",
-      description: "Get all user information",
+      description:
+        "Get all user with pagination, firstName, middleName, lastName, email, referralCode, role, emailVerified",
       plugins: getAllUserSwawgger,
-      tags: ["api", "user"],
+      tags: ["api", "kyc"],
+      validate: {
+        query: getAllUserSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
       handler: async (request: Request, response: ResponseToolkit) => {
         const userId = request.auth.credentials.userId;
         const user = await User.findById(userId);
         if (user.role === "admin") {
-          const allUser = await User.find({ role: { $ne: "admin" } });
-          return allUser;
+          let {
+            id,
+            firstName,
+            lastName,
+            middleName,
+            email,
+            emailVerified,
+            role,
+            kycVerified,
+            page,
+          } = request.query;
+          const query = {};
+          if (id) query["_id"] = id;
+          if (firstName) query["firstName"] = firstName;
+          if (lastName) query["lastName"] = lastName;
+          if (middleName) query["middleName"] = middleName;
+          if (email) query["email"] = email;
+          if (emailVerified !== undefined)
+            query["emailVerified"] = emailVerified;
+          if (role) query["role"] = role;
+          if (kycVerified !== undefined) query["kycVerified"] = kycVerified;
+          if (!page) page = 1;
+          const result = User.find(query)
+            .skip((page - 1) * 10)
+            .limit(10);
+          return result;
         }
         return response
           .response({ msg: "You have no permission to access." })

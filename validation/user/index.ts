@@ -59,3 +59,15 @@ export const userUpdateSchema = Joi.object({
   role: Joi.string().optional(),
   referralCode: Joi.string().optional(),
 });
+
+export const getAllUserSchema = Joi.object({
+  id: Joi.string().optional().description("Id"),
+  firstName: Joi.string().optional().description("FirstName"),
+  lastName: Joi.string().optional().description("LastName"),
+  middleName: Joi.string().optional().description("MiddleName"),
+  email: Joi.string().email().optional().description("Email"),
+  emailVerified: Joi.boolean().optional().description("EmailVerified"),
+  role: Joi.string().optional().description("Role"),
+  kycVerified: Joi.boolean().optional().description("KycVerified"),
+  page: Joi.number().optional().description("Page number"),
+});

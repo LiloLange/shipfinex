@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userUpdateSchema = exports.otpSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
+exports.getAllUserSchema = exports.userUpdateSchema = exports.otpSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.createUserSchema = joi_1.default.object({
     firstName: joi_1.default.string().required().messages({
@@ -60,5 +60,16 @@ exports.userUpdateSchema = joi_1.default.object({
     phoneNumber: joi_1.default.string().optional(),
     role: joi_1.default.string().optional(),
     referralCode: joi_1.default.string().optional(),
+});
+exports.getAllUserSchema = joi_1.default.object({
+    id: joi_1.default.string().optional().description("Id"),
+    firstName: joi_1.default.string().optional().description("FirstName"),
+    lastName: joi_1.default.string().optional().description("LastName"),
+    middleName: joi_1.default.string().optional().description("MiddleName"),
+    email: joi_1.default.string().email().optional().description("Email"),
+    emailVerified: joi_1.default.boolean().optional().description("EmailVerified"),
+    role: joi_1.default.string().optional().description("Role"),
+    kycVerified: joi_1.default.boolean().optional().description("KycVerified"),
+    page: joi_1.default.number().optional().description("Page number"),
 });
 //# sourceMappingURL=index.js.map
