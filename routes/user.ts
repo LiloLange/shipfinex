@@ -178,7 +178,7 @@ export let userRoute = [
               expiresIn: "1h",
             }
           );
-          const fullName = user.firstName + user.middleName + user.lastName;
+          const fullName = user.firstName + " " + user.lastName;
           return response
             .response({ token, fullName, role: user.role })
             .code(200);

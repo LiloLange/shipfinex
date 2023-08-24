@@ -77,7 +77,7 @@ const init = async () => {
   if (!fs.existsSync(project)) {
     fs.mkdirSync(project);
   }
-  console.log("Updated!!!!!");
+  console.log("Updated!!!!!!");
   console.log(`🚀 Server running on ${server.info.uri} 🚀`);
 
   return server;
