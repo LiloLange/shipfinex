@@ -170,31 +170,38 @@ exports.kycRoute = [
             tags: ["api", "kyc"],
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            console.log(request.payload);
             if (request.payload["type"] === "applicantCreated") {
                 const newKYC = new kycs_1.default(request.payload);
                 newKYC.history.push({
                     type: "Creat",
                     createdAt: newKYC.createdAtMs,
                 });
-                const result = yield newKYC.save();
-                return response.response(result).code(201);
+                try {
+                    const result = yield newKYC.save();
+                    return response.response(result).code(201);
+                }
+                catch (error) {
+                    console.log(error);
+                    return response.response({ msg: "Error occurs" }).code(404);
+                }
             }
-            const kyc = yield kycs_1.default.findOne({
-                applicantId: request.payload["applicantId"],
-            });
-            if (kyc) {
-                kyc.type = request.payload["type"];
-                kyc.reviewStatus = request.payload["reviewStatus"];
-                kyc.createdAtMs = request.payload["createdAtMs"];
-                if (request.payload["reviewResult"])
-                    kyc.reviewResult = request.payload["reviewResult"];
-                kyc.history.push({
-                    type: kyc.type,
-                    createdAt: kyc.createdAtMs,
-                });
-                yield kyc.save();
-                return response.response(kyc);
-            }
+            // const kyc = await KYC.findOne({
+            //   applicantId: request.payload["applicantId"],
+            // });
+            // if (kyc) {
+            //   kyc.type = request.payload["type"];
+            //   kyc.reviewStatus = request.payload["reviewStatus"];
+            //   kyc.createdAtMs = request.payload["createdAtMs"];
+            //   if (request.payload["reviewResult"])
+            //     kyc.reviewResult = request.payload["reviewResult"];
+            //   kyc.history.push({
+            //     type: kyc.type,
+            //     createdAt: kyc.createdAtMs,
+            //   });
+            //   await kyc.save();
+            //   return response.response(kyc);
+            // }
             return response.response({ msg: "KYC not found" }).code(404);
         }),
     },
