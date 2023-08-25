@@ -33,6 +33,7 @@ const createSignature = (config) => __awaiter(void 0, void 0, void 0, function* 
     // }
     config.headers["X-App-Access-Ts"] = ts;
     config.headers["X-App-Access-Sig"] = signature.digest("hex");
+    config.timeout = 6000;
     return config;
 });
 axios_1.default.interceptors.request.use(createSignature, function (error) {

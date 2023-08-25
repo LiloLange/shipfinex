@@ -116,16 +116,18 @@ export let kycRoute = [
           const applicantVeriff = await getApplicantVerifStep(
             request.params.applicantId
           );
-          console.log(applicantVeriff);
           const res = await getImage(
             applicant.inspectionId,
             applicantVeriff.IDENTITY.imageIds[0]
           );
-          const buffer = Buffer.from(res, "binary");
-          console.log(buffer.length);
-          return response.response(buffer);
+          // const buffer = Buffer.from(res, "binary");
+          return response.response({
+            applicant,
+            applicantVeriff,
+            // image: buffer,
+          });
         } catch (error) {
-          console.log(error);
+          //console.log(error);
           return response
             .response({ msg: "KYC not found with given id" })
             .code(404);

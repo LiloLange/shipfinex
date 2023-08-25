@@ -25,7 +25,7 @@ const createSignature = async (config) => {
 
   config.headers["X-App-Access-Ts"] = ts;
   config.headers["X-App-Access-Sig"] = signature.digest("hex");
-
+  config.timeout = 6000;
   return config;
 };
 
