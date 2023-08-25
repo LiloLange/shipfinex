@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getImageHeaders = exports.getImage = exports.getApplicantVerifStep = exports.getApplicant = void 0;
+exports.getAccessToken = exports.getImageHeaders = exports.getImage = exports.getApplicantVerifStep = exports.getApplicant = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
 const config_1 = __importDefault(require("../config"));
@@ -47,10 +47,35 @@ const getApplicant = (applicantId) => __awaiter(void 0, void 0, void 0, function
     config.method = "GET";
     config.url = url;
     config.headers = headers;
-    const response = yield (0, axios_1.default)(config);
-    return response.data;
+    config.responseType = "json";
+    try {
+        const response = yield (0, axios_1.default)(config);
+        return response.data;
+    }
+    catch (error) {
+        console.log(error);
+    }
 });
 exports.getApplicant = getApplicant;
+const getAccessToken = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const url = `/resources/accessTokens?userId=${userId}&levelName=basic-kyc-level&ttlInSecs=2000`;
+    const headers = {
+        Accept: "application/json",
+        "X-App-Token": sumsubToken,
+    };
+    config.method = "POST";
+    config.url = url;
+    config.headers = headers;
+    config.responseType = "json";
+    try {
+        const response = yield (0, axios_1.default)(config);
+        return response.data;
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+exports.getAccessToken = getAccessToken;
 const getApplicantVerifStep = (applicantId) => __awaiter(void 0, void 0, void 0, function* () {
     const url = `/resources/applicants/${applicantId}/requiredIdDocsStatus`;
     const headers = {
@@ -60,8 +85,14 @@ const getApplicantVerifStep = (applicantId) => __awaiter(void 0, void 0, void 0,
     config.method = "GET";
     config.url = url;
     config.headers = headers;
-    const response = yield (0, axios_1.default)(config);
-    return response.data;
+    config.responseType = "json";
+    try {
+        const response = yield (0, axios_1.default)(config);
+        return response.data;
+    }
+    catch (error) {
+        console.log(error);
+    }
 });
 exports.getApplicantVerifStep = getApplicantVerifStep;
 const getImage = (inspectionId, imageId) => __awaiter(void 0, void 0, void 0, function* () {

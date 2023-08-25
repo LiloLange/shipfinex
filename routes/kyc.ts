@@ -6,7 +6,7 @@ import {
   getApplicant,
   getApplicantVerifStep,
   getImage,
-  getImageHeaders,
+  getAccessToken,
 } from "../utils/sumsub";
 import {
   createKYCSwagger,
@@ -116,13 +116,37 @@ export let kycRoute = [
           const applicantVeriff = await getApplicantVerifStep(
             request.params.applicantId
           );
+          console.log(applicantVeriff);
           const res = await getImage(
             applicant.inspectionId,
             applicantVeriff.IDENTITY.imageIds[0]
           );
           const buffer = Buffer.from(res, "binary");
           console.log(buffer.length);
-          return response.response(buffer).type("image/jpeg");
+          return response.response(buffer);
+        } catch (error) {
+          console.log(error);
+          return response
+            .response({ msg: "KYC not found with given id" })
+            .code(404);
+        }
+      },
+    },
+  },
+  {
+    method: "GET",
+    path: "/websdk",
+    options: {
+      auth: "jwt",
+      description: "Get an KYC by id",
+      plugins: getSingleKYCSwagger,
+      tags: ["api", "kyc"],
+      handler: async (request: Request, response: ResponseToolkit) => {
+        try {
+          const accessToken = await getAccessToken(
+            request.auth.credentials.userId
+          );
+          return response.response(accessToken);
         } catch (error) {
           console.log(error);
           return response
@@ -194,22 +218,22 @@ export let kycRoute = [
           return response.response({ msg: "Error occurs" }).code(404);
         }
       }
-      // const kyc = await KYC.findOne({
-      //   applicantId: request.payload["applicantId"],
-      // });
-      // if (kyc) {
-      //   kyc.type = request.payload["type"];
-      //   kyc.reviewStatus = request.payload["reviewStatus"];
-      //   kyc.createdAtMs = request.payload["createdAtMs"];
-      //   if (request.payload["reviewResult"])
-      //     kyc.reviewResult = request.payload["reviewResult"];
-      //   kyc.history.push({
-      //     type: kyc.type,
-      //     createdAt: kyc.createdAtMs,
-      //   });
-      //   await kyc.save();
-      //   return response.response(kyc);
-      // }
+      const kyc = await KYC.findOne({
+        applicantId: request.payload["applicantId"],
+      });
+      if (kyc) {
+        kyc.type = request.payload["type"];
+        kyc.reviewStatus = request.payload["reviewStatus"];
+        kyc.createdAtMs = request.payload["createdAtMs"];
+        if (request.payload["reviewResult"])
+          kyc.reviewResult = request.payload["reviewResult"];
+        kyc.history.push({
+          type: kyc.type,
+          createdAt: kyc.createdAtMs,
+        });
+        await kyc.save();
+        return response.response(kyc);
+      }
       return response.response({ msg: "KYC not found" }).code(404);
     },
   },

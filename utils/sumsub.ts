@@ -44,9 +44,35 @@ const getApplicant = async (applicantId) => {
   config.method = "GET";
   config.url = url;
   config.headers = headers;
+  config.responseType = "json";
 
-  const response = await axios(config);
-  return response.data;
+  try {
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAccessToken = async (userId) => {
+  const url = `/resources/accessTokens?userId=${userId}&levelName=basic-kyc-level&ttlInSecs=2000`;
+
+  const headers = {
+    Accept: "application/json",
+    "X-App-Token": sumsubToken,
+  };
+
+  config.method = "POST";
+  config.url = url;
+  config.headers = headers;
+  config.responseType = "json";
+
+  try {
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const getApplicantVerifStep = async (applicantId) => {
@@ -60,9 +86,14 @@ const getApplicantVerifStep = async (applicantId) => {
   config.method = "GET";
   config.url = url;
   config.headers = headers;
+  config.responseType = "json";
 
-  const response = await axios(config);
-  return response.data;
+  try {
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const getImage = async (inspectionId, imageId) => {
@@ -100,4 +131,10 @@ const getImageHeaders = async (inspectionId, imageId) => {
   };
   return result;
 };
-export { getApplicant, getApplicantVerifStep, getImage, getImageHeaders };
+export {
+  getApplicant,
+  getApplicantVerifStep,
+  getImage,
+  getImageHeaders,
+  getAccessToken,
+};
