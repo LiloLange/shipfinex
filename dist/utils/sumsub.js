@@ -23,7 +23,7 @@ let config = {};
 config.baseURL = SUMSUB_BASE_URL;
 const createSignature = (config) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("Creating a signature for the request...");
-    var ts = Math.floor(Date.now() / 1000) + 250;
+    var ts = Math.floor(Date.now() / 1000) + 50;
     const signature = crypto_1.default.createHmac("sha256", sumsubSecret);
     signature.update(ts + config.method.toUpperCase() + config.url);
     // if (config.data instanceof FormData) {
