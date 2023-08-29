@@ -52,8 +52,6 @@ const init = async () => {
     verifyOptions: { algorithms: ["HS256"] },
   });
 
-  // server.auth.default("jwt");
-
   await setRoutes(server);
 
   await server.start();
@@ -77,7 +75,6 @@ const init = async () => {
   if (!fs.existsSync(project)) {
     fs.mkdirSync(project);
   }
-  console.log("Updated!!!!!!");
   console.log(`🚀 Server running on ${server.info.uri} 🚀`);
 
   return server;

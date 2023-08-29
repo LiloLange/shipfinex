@@ -21,7 +21,7 @@ export const createUserSchema = Joi.object({
   role: Joi.string().required().messages({
     "any.required": "Please provide role.",
   }),
-  referralCode: Joi.string().optional(),
+  referralCode: Joi.string().allow('').optional(),
 });
 
 export const loginUserSchema = Joi.object({

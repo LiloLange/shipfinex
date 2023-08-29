@@ -82,7 +82,6 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
         validate: validateUser,
         verifyOptions: { algorithms: ["HS256"] },
     });
-    // server.auth.default("jwt");
     yield (0, routes_1.default)(server);
     yield server.start();
     let fileName = __dirname + "/static";
@@ -101,7 +100,6 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!fs_1.default.existsSync(project)) {
         fs_1.default.mkdirSync(project);
     }
-    console.log("Updated!!!!!!");
     console.log(`🚀 Server running on ${server.info.uri} 🚀`);
     return server;
 });

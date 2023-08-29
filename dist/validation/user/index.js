@@ -26,7 +26,7 @@ exports.createUserSchema = joi_1.default.object({
     role: joi_1.default.string().required().messages({
         "any.required": "Please provide role.",
     }),
-    referralCode: joi_1.default.string().optional(),
+    referralCode: joi_1.default.string().allow('').optional(),
 });
 exports.loginUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().required().messages({
