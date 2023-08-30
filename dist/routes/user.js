@@ -50,7 +50,7 @@ exports.userRoute = [
                 const email = request.payload["email"];
                 const user = yield users_1.default.findOne({ email });
                 if (user) {
-                    return response.response({ msg: "User already exists." }).code(409);
+                    return response.response([{ message: "User already exists", path: ["email"] }]).code(409);
                 }
                 const newUser = new users_1.default(request.payload);
                 const { password } = newUser;
