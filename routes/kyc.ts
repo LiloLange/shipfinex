@@ -22,7 +22,6 @@ import {
 } from "../validation/kyc";
 import getCurrentLoalTime from "../utils/getCurrentLoalTime";
 import User from "../models/users";
-import { UpdateKYCPayload } from "../interfaces";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let kycRoute = [
@@ -116,10 +115,10 @@ export let kycRoute = [
           const applicantVeriff = await getApplicantVerifStep(
             request.params.applicantId
           );
-          const res = await getImage(
-            applicant.inspectionId,
-            applicantVeriff.IDENTITY.imageIds[0]
-          );
+          // const res = await getImage(
+          //   applicant.inspectionId,
+          //   applicantVeriff.IDENTITY.imageIds[0]
+          // );
           // const buffer = Buffer.from(res, "binary");
           return response.response({
             applicant,

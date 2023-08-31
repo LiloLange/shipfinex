@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSingleUserSwagger = exports.updateSingleUserSwagger = exports.getSingleUserSwagger = exports.getAllUserSwawgger = exports.currentUserSwagger = exports.verifyEmailSwagger = exports.otpSwagger = exports.loginUserSwagger = exports.createUserSwagger = void 0;
+exports.deleteSingleUserSwagger = exports.updateSingleUserSwagger = exports.getSingleUserSwagger = exports.getAllUserSwawgger = exports.currentUserSwagger = exports.verifyEmailSwagger = exports.resendOTPVerifySwagger = exports.resendEmailVerifySwagger = exports.otpSwagger = exports.loginUserSwagger = exports.createUserSwagger = void 0;
 exports.createUserSwagger = {
     "hapi-swagger": {
         responses: {
@@ -39,6 +39,30 @@ exports.otpSwagger = {
             },
             400: {
                 description: "OTP Verification Failed.",
+            },
+        },
+    },
+};
+exports.resendEmailVerifySwagger = {
+    "hapi-swagger": {
+        responses: {
+            200: {
+                description: "Successfully re-send email verification",
+            },
+            400: {
+                description: "Sending email verification failed",
+            },
+        },
+    },
+};
+exports.resendOTPVerifySwagger = {
+    "hapi-swagger": {
+        responses: {
+            200: {
+                description: "Successfully re-send otp code",
+            },
+            400: {
+                description: "Sending otp code failed",
             },
         },
     },

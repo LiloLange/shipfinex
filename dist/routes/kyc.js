@@ -109,7 +109,10 @@ exports.kycRoute = [
                 try {
                     const applicant = yield (0, sumsub_1.getApplicant)(request.params.applicantId);
                     const applicantVeriff = yield (0, sumsub_1.getApplicantVerifStep)(request.params.applicantId);
-                    const res = yield (0, sumsub_1.getImage)(applicant.inspectionId, applicantVeriff.IDENTITY.imageIds[0]);
+                    // const res = await getImage(
+                    //   applicant.inspectionId,
+                    //   applicantVeriff.IDENTITY.imageIds[0]
+                    // );
                     // const buffer = Buffer.from(res, "binary");
                     return response.response({
                         applicant,

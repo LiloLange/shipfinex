@@ -12,17 +12,13 @@ import connectDB from "./lib/dbConnect";
 import setRoutes from "./routes";
 
 const validateUser = async (decoded, request, h) => {
-  // Perform validation of the decoded JWT token
-  // Return an error if validation fails, or return a user object if validation succeeds
-  // throw Boom.unauthorized("Invalid credentials");.
   return { isValid: true, userId: decoded.userId };
-  // return "OK";
 };
 
 const init = async () => {
   await connectDB();
   const server: hapi.Server = new hapi.Server({
-    port: 3000,
+    port: 3030,
     routes: { cors: { origin: ["*"] } },
     host: "0.0.0.0",
   });
@@ -32,7 +28,7 @@ const init = async () => {
     plugin: HapiSwagger,
     options: {
       info: {
-        title: "My API",
+        title: "ShipFinex Backend API",
         version: "1.0.0",
       },
       securityDefinitions: {

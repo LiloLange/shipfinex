@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUserSchema = exports.userUpdateSchema = exports.otpSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
+exports.getAllUserSchema = exports.userUpdateSchema = exports.otpSchema = exports.resendSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.createUserSchema = joi_1.default.object({
     firstName: joi_1.default.string().required().messages({
@@ -26,7 +26,7 @@ exports.createUserSchema = joi_1.default.object({
     role: joi_1.default.string().required().messages({
         "any.required": "Please provide role.",
     }),
-    referralCode: joi_1.default.string().allow('').optional(),
+    referralCode: joi_1.default.string().allow("").optional(),
 });
 exports.loginUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().required().messages({
@@ -36,6 +36,12 @@ exports.loginUserSchema = joi_1.default.object({
     password: joi_1.default.string().required().min(6).messages({
         "any.required": "Please provide password.",
         "string.min": "Password must be at least 6 characters.",
+    }),
+});
+exports.resendSchema = joi_1.default.object({
+    email: joi_1.default.string().email().required().messages({
+        "any.required": "Please provide email",
+        "string.email": "Please provide a valid email.",
     }),
 });
 exports.otpSchema = joi_1.default.object({

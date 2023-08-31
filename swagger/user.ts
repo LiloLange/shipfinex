@@ -43,6 +43,32 @@ export const otpSwagger = {
   },
 };
 
+export const resendEmailVerifySwagger = {
+  "hapi-swagger": {
+    responses: {
+      200: {
+        description: "Successfully re-send email verification",
+      },
+      400: {
+        description: "Sending email verification failed",
+      },
+    },
+  },
+};
+
+export const resendOTPVerifySwagger = {
+  "hapi-swagger": {
+    responses: {
+      200: {
+        description: "Successfully re-send otp code",
+      },
+      400: {
+        description: "Sending otp code failed",
+      },
+    },
+  },
+};
+
 export const verifyEmailSwagger = {
   "hapi-swagger": {
     responses: {

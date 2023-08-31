@@ -21,7 +21,7 @@ export const createUserSchema = Joi.object({
   role: Joi.string().required().messages({
     "any.required": "Please provide role.",
   }),
-  referralCode: Joi.string().allow('').optional(),
+  referralCode: Joi.string().allow("").optional(),
 });
 
 export const loginUserSchema = Joi.object({
@@ -32,6 +32,13 @@ export const loginUserSchema = Joi.object({
   password: Joi.string().required().min(6).messages({
     "any.required": "Please provide password.",
     "string.min": "Password must be at least 6 characters.",
+  }),
+});
+
+export const resendSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "any.required": "Please provide email",
+    "string.email": "Please provide a valid email.",
   }),
 });
 

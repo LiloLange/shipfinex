@@ -45,16 +45,12 @@ const config_1 = __importDefault(require("./config"));
 const dbConnect_1 = __importDefault(require("./lib/dbConnect"));
 const routes_1 = __importDefault(require("./routes"));
 const validateUser = (decoded, request, h) => __awaiter(void 0, void 0, void 0, function* () {
-    // Perform validation of the decoded JWT token
-    // Return an error if validation fails, or return a user object if validation succeeds
-    // throw Boom.unauthorized("Invalid credentials");.
     return { isValid: true, userId: decoded.userId };
-    // return "OK";
 });
 const init = () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, dbConnect_1.default)();
     const server = new hapi.Server({
-        port: 3000,
+        port: 3030,
         routes: { cors: { origin: ["*"] } },
         host: "0.0.0.0",
     });
@@ -64,7 +60,7 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
         plugin: hapi_swagger_1.default,
         options: {
             info: {
-                title: "My API",
+                title: "ShipFinex Backend API",
                 version: "1.0.0",
             },
             securityDefinitions: {

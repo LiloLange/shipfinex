@@ -26,15 +26,26 @@ describe("Post /", () => {
         const userData = {
             firstName: "Lilo",
             lastName: "Lange",
-            email: "sage123@gmail.com",
+            email: "sage15578@gmail.com",
             phoneNumber: "4532623152",
             password: "codemaster",
             role: "investor",
+            referralCode: "123",
         };
         const response = yield (0, supertest_1.default)((yield server).listener)
             .post("/api/v1/user/register")
             .send(userData);
         expect(response.statusCode).toEqual(201);
+    }), 10000);
+    it("should return status code 201", () => __awaiter(void 0, void 0, void 0, function* () {
+        const userData = {
+            email: "sage15578@gmail.com",
+            password: "codemaster",
+        };
+        const response = yield (0, supertest_1.default)((yield server).listener)
+            .post("/api/v1/user/login")
+            .send(userData);
+        expect(response.statusCode).toEqual(200);
     }), 10000);
 });
 //# sourceMappingURL=user.test.js.map

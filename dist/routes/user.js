@@ -50,7 +50,9 @@ exports.userRoute = [
                 const email = request.payload["email"];
                 const user = yield users_1.default.findOne({ email });
                 if (user) {
-                    return response.response([{ message: "User already exists", path: ["email"] }]).code(409);
+                    return response
+                        .response([{ message: "User already exists", path: ["email"] }])
+                        .code(409);
                 }
                 const newUser = new users_1.default(request.payload);
                 const { password } = newUser;
@@ -71,9 +73,9 @@ exports.userRoute = [
                     lastName: result.lastName,
                 })
                     .code(201);
-                // return token;
             }
             catch (error) {
+                console.log(error);
                 return response.response(error).code(500);
             }
         }),
@@ -112,15 +114,12 @@ exports.userRoute = [
                         (0, sendMail_1.default)(result.email, content);
                         return response.response({
                             msg: "OTP Code has just sent to your email.",
-                            // otp: result.otp,
                         });
-                        //Generate and send OTP
                     }
                     else {
                         const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
                             expiresIn: "3m",
                         });
-                        // sendMail(user.email, token);
                         const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
                         const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
                         (0, sendMail_1.default)(user.email, content);
@@ -130,10 +129,104 @@ exports.userRoute = [
                     }
                 }
                 else {
-                    return response.response({ msg: "Password is incorrect." }).code(400);
+                    return response
+                        .response([
+                        { message: "Password is incorrect", path: ["password"] },
+                    ])
+                        .code(400);
                 }
             }
-            return response.response({ msg: "User not found." }).code(404);
+            return response
+                .response([{ message: "User not found", path: ["email"] }])
+                .code(404);
+        }),
+    },
+    {
+        method: "POST",
+        path: "/re-send/email-verification",
+        options: {
+            description: "Resend Email Verification",
+            plugins: user_2.resendEmailVerifySwagger,
+            tags: ["api", "user"],
+            validate: {
+                payload: user_1.resendSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+        },
+        handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            const user = yield users_1.default.findOne({ email: request.payload["email"] });
+            if (user) {
+                const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
+                    expiresIn: "3m",
+                });
+                // sendMail(user.email, token);
+                const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
+                const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
+                (0, sendMail_1.default)(user.email, content);
+                return response.response({
+                    msg: "Email verification has sent to your email",
+                });
+            }
+            return response
+                .response([{ message: "User not found", path: ["email"] }])
+                .code(404);
+        }),
+    },
+    {
+        method: "POST",
+        path: "/re-send/otp-verification",
+        options: {
+            description: "Resend OTP Verification Code",
+            plugins: user_2.resendOTPVerifySwagger,
+            tags: ["api", "user"],
+            validate: {
+                payload: user_1.resendSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+        },
+        handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            const user = yield users_1.default.findOne({ email: request.payload["email"] });
+            if (user) {
+                const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
+                    expiresIn: "3m",
+                });
+                if (user.emailVerified) {
+                    const otp = (0, otp_1.default)();
+                    user.otp = otp;
+                    const result = yield user.save();
+                    const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
+                    (0, sendMail_1.default)(result.email, content);
+                    return response.response({
+                        msg: "OTP Code has just sent to your email.",
+                    });
+                }
+                else {
+                    return response
+                        .response({ msg: "You need to verify email first" })
+                        .code(400);
+                }
+            }
+            return response
+                .response([{ message: "User not found", path: ["email"] }])
+                .code(404);
         }),
     },
     {
@@ -250,6 +343,7 @@ exports.userRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const userId = request.auth.credentials.userId;
                 const user = yield users_1.default.findById(userId);
+                const total = yield users_1.default.countDocuments();
                 if (user.role === "admin") {
                     let { id, firstName, lastName, middleName, email, emailVerified, role, kycVerified, page, } = request.query;
                     const query = {};
@@ -272,9 +366,9 @@ exports.userRoute = [
                     if (!page)
                         page = 1;
                     const result = users_1.default.find(query)
-                        .skip((page - 1) * 10)
-                        .limit(10);
-                    return result;
+                        .skip((page - 1) * 25)
+                        .limit(25);
+                    return { total: total, data: result, offset: page * 25 };
                 }
                 return response
                     .response({ msg: "You have no permission to access." })
