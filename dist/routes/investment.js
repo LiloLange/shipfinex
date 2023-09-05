@@ -104,9 +104,12 @@ exports.investmentRoute = [
                         .sort({ createdAt: -1 })
                         .skip((page - 1) * 10)
                         .limit(10);
+                    let totalAmountNum = 0;
+                    if (totalAmount.length > 0)
+                        totalAmountNum = totalAmount[0]["totalAmount"];
                     return {
                         total,
-                        totalAmount: totalAmount[0]["totalAmount"],
+                        totalAmount: totalAmountNum,
                         data: result,
                         offset: page * 10,
                     };
@@ -137,8 +140,15 @@ exports.investmentRoute = [
                         .sort({ createdAt: -1 })
                         .skip((page - 1) * 25)
                         .limit(25);
-                    console.log(result);
-                    return { total, totalAmount, data: result, offset: page * 25 };
+                    let totalAmountNum = 0;
+                    if (totalAmount.length > 0)
+                        totalAmountNum = totalAmount[0]["totalAmount"];
+                    return {
+                        total,
+                        totalAmount: totalAmountNum,
+                        data: result,
+                        offset: page * 25,
+                    };
                 }
                 if (user.role === "prowner") {
                     let { status, page } = request.query;
@@ -222,9 +232,15 @@ exports.investmentRoute = [
                     console.log(pipeline);
                     const result = yield investments_1.default.aggregate(pipeline);
                     console.log(result);
+                    let totalAmountNum = 0;
+                    if (totalAmount.length > 0)
+                        totalAmountNum = totalAmount[0]["totalAmount"];
+                    let totalNum = 0;
+                    if (total.length > 0)
+                        totalNum = total[0]["count"];
                     return {
-                        total: total[0]["count"],
-                        totalAmount: totalAmount[0]["totalAmount"],
+                        total: totalNum,
+                        totalAmount: totalAmountNum,
                         data: result,
                         offset: page * 25,
                     };

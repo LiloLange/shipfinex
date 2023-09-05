@@ -93,9 +93,15 @@ export let depositRoute = [
           amount: request.params["amount"],
         };
         const traHistory = await Deposit.find(query);
+        const user = await User.findById(query.userId);
         if (traHistory.length !== 0) {
           if (request.payload["status"] == 100) {
-            await traHistory[0].deleteOne();
+            try {
+              await mint(user.wallet.address, query.amount, false);
+              await traHistory[0].deleteOne();
+            } catch (error) {
+              console.log(error);
+            }
             return response.response("Deposit Success");
           }
           return response.response({ msg: "Deposit failed" }).code(400);
@@ -120,7 +126,7 @@ export let depositRoute = [
         const user = await User.findOne({ cus_id: cus_id });
         console.log(user.wallet.address, amount);
         try {
-          await mint(user.wallet.address, amount, false);
+          await mint(user.wallet.address, amount / 100, false);
         } catch (error) {
           console.log(error);
         }

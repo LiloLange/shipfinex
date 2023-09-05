@@ -93,9 +93,12 @@ export let investmentRoute = [
             .sort({ createdAt: -1 })
             .skip((page - 1) * 10)
             .limit(10);
+          let totalAmountNum = 0;
+          if (totalAmount.length > 0)
+            totalAmountNum = totalAmount[0]["totalAmount"];
           return {
             total,
-            totalAmount: totalAmount[0]["totalAmount"],
+            totalAmount: totalAmountNum,
             data: result,
             offset: page * 10,
           };
@@ -109,7 +112,7 @@ export let investmentRoute = [
           const objectId = new mongoose.Types.ObjectId(
             request.auth.credentials.userId as string
           );
-          const totalAmount = await Investment.aggregate([
+          const totalAmount: Array<Object> = await Investment.aggregate([
             {
               $match: {
                 userId: objectId,
@@ -126,8 +129,15 @@ export let investmentRoute = [
             .sort({ createdAt: -1 })
             .skip((page - 1) * 25)
             .limit(25);
-          console.log(result);
-          return { total, totalAmount, data: result, offset: page * 25 };
+          let totalAmountNum = 0;
+          if (totalAmount.length > 0)
+            totalAmountNum = totalAmount[0]["totalAmount"];
+          return {
+            total,
+            totalAmount: totalAmountNum,
+            data: result,
+            offset: page * 25,
+          };
         }
         if (user.role === "prowner") {
           let { status, page } = request.query;
@@ -211,9 +221,15 @@ export let investmentRoute = [
           console.log(pipeline);
           const result = await Investment.aggregate(pipeline);
           console.log(result);
+
+          let totalAmountNum = 0;
+          if (totalAmount.length > 0)
+            totalAmountNum = totalAmount[0]["totalAmount"];
+          let totalNum = 0;
+          if (total.length > 0) totalNum = total[0]["count"];
           return {
-            total: total[0]["count"],
-            totalAmount: totalAmount[0]["totalAmount"],
+            total: totalNum,
+            totalAmount: totalAmountNum,
             data: result,
             offset: page * 25,
           };
