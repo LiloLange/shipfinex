@@ -27,6 +27,7 @@ import {
   resendOTPVerifySwagger,
 } from "../swagger/user";
 
+import { createCustomer } from "../utils/stripepayment";
 import { UpdateUserPayload } from "../interfaces";
 
 import GenerateOTP from "../utils/otp";
@@ -307,6 +308,7 @@ export let userRoute = [
               role: user.role,
               kycStatus: user.kycStatus,
               walletAddress: user.wallet.address,
+              cus_id: user.cus_id,
             })
             .code(200);
         }
@@ -336,6 +338,12 @@ export let userRoute = [
       const user = await User.findById(decoded.userId);
       if (user) {
         user.emailVerified = true;
+        const customer = await createCustomer(
+          user.firstName + " " + user.lastName,
+          user.email,
+          user.phoneNumber
+        );
+        user.cus_id = customer["id"];
         await user.save();
         return success.toLocaleString();
       }

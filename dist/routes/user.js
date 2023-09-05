@@ -21,6 +21,7 @@ const users_1 = __importDefault(require("../models/users"));
 const config_1 = __importDefault(require("../config"));
 const user_1 = require("../validation/user");
 const user_2 = require("../swagger/user");
+const stripepayment_1 = require("../utils/stripepayment");
 const otp_1 = __importDefault(require("../utils/otp"));
 const sendMail_1 = __importDefault(require("../utils/sendMail"));
 const options = { abortEarly: false, stripUnknown: true };
@@ -280,6 +281,7 @@ exports.userRoute = [
                         role: user.role,
                         kycStatus: user.kycStatus,
                         walletAddress: user.wallet.address,
+                        cus_id: user.cus_id,
                     })
                         .code(200);
                 }
@@ -309,6 +311,8 @@ exports.userRoute = [
             const user = yield users_1.default.findById(decoded.userId);
             if (user) {
                 user.emailVerified = true;
+                const customer = yield (0, stripepayment_1.createCustomer)(user.firstName + " " + user.lastName, user.email, user.phoneNumber);
+                user.cus_id = customer["id"];
                 yield user.save();
                 return success.toLocaleString();
             }

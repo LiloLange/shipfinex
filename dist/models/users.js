@@ -49,6 +49,9 @@ const userSchema = new Schema({
         type: String,
         enum: ["investor", "prowner", "admin"],
     },
+    cus_id: {
+        type: String,
+    },
     doneMilestones: [
         {
             milestoneId: {
