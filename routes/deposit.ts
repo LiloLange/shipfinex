@@ -112,30 +112,16 @@ export let depositRoute = [
 
       let event;
 
-      try {
-        event = client.webhooks.constructEvent(
-          request.payload,
-          sig,
-          "whsec_tJG83GCYYqPehdBfLcfkPlwcfdZSMb3d"
-        );
-        if (request.payload["type"] === "charge.succeeded") {
-          const cus_id = request.payload["data"]["object"]["customer"];
-          const amount = request.payload["data"]["object"]["amount"];
-          console.log(cus_id);
-          const user = await User.findOne({ cus_id: cus_id });
-          console.log(user.wallet.address);
-          console.log(request.payload["data"]["object"]["receipt_url"]);
-          return response.response("Success");
-        }
-      } catch (err) {
-        return response.response(`Webhook Error: ${err.message}`).code(400);
+      if (request.payload["type"] === "charge.succeeded") {
+        const cus_id = request.payload["data"]["object"]["customer"];
+        const amount = request.payload["data"]["object"]["amount"];
+        console.log(cus_id);
+        const user = await User.findOne({ cus_id: cus_id });
+        console.log(user.wallet.address);
+        console.log(request.payload["data"]["object"]["receipt_url"]);
+        return response.response("Success");
       }
-
-      // Handle the event
-      console.log(`Unhandled event type ${event.type}`);
-
-      // Return a 200 response to acknowledge receipt of the event
-      return response.response({ msg: "Deposit can't find" }).code(404);
+      return response.response("Handle Not Charing");
     },
   },
 ];
