@@ -180,7 +180,7 @@ export let kycRoute = [
   },
   {
     method: "GET",
-    path: "/sumsub/websdk",
+    path: "/websdk",
     options: {
       // auth: "jwt",
       description: "Get an KYC by id",
