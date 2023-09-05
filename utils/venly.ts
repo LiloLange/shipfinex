@@ -1,5 +1,10 @@
 import crypto from "crypto";
 import axios from "axios";
+
+import Web3 from "web3";
+import HDWalletProvider from "@truffle/hdwallet-provider";
+import MRN_ABI from "./MRN.json";
+
 import devConfig from "../config";
 import qs from "qs";
 
@@ -8,6 +13,9 @@ const sumsubToken = devConfig.sumsubToken;
 
 const VENLY_AUTH_BASE_URL = "https://login-staging.venly.io";
 const VENLY_WALLET_BASE_URL = "https://api-wallet-sandbox.venly.io";
+
+const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
+const MRN_CONTRACT_ADDRESS = process.env.MRN_CONTRACT_ADDRESS;
 
 let config: any = {};
 
@@ -87,6 +95,60 @@ const createWallet = async () => {
   } catch (error) {
     console.log(error);
   }
+};
+
+const localKeyProvider = new HDWalletProvider({
+  privateKeys: [adminPrivateKey],
+  providerOrUrl: "https://ethereum-goerli.publicnode.com",
+});
+
+// @ts-ignore
+const web3 = new Web3(localKeyProvider);
+
+const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
+
+const mrnContract = new web3.eth.Contract(
+  MRN_ABI as any[],
+  MRN_CONTRACT_ADDRESS
+);
+
+export const mint = async (to: string, amount: string) => {
+  await mrnContract.methods
+    // @ts-ignore
+    .mint(to, amount)
+    .send({ from: adminAccount.address })
+    .on("transactionHash", (hash: string) => {})
+    // @ts-ignore
+    .on("confirmation", (confirmationNumber: number, recepit: any) => {})
+    .on("error", (error: any) => {});
+};
+
+export const burn = async (from: string, amount: string) => {
+  await mrnContract.methods
+    // @ts-ignore
+    .burn(from, amount)
+    .send({ from: adminAccount.address })
+    .on("transactionHash", (hash: string) => {})
+    // @ts-ignore
+    .on("confirmation", (confirmationNumber: number, recepit: any) => {})
+    .on("error", (error: any) => {});
+};
+
+export const getBalance = async (address: string) => {
+  const totalBalance = await mrnContract.methods
+    // @ts-ignore
+    .balanceOf(address)
+    .call({ from: adminAccount.address });
+  const cryptoBalance = await mrnContract.methods
+    // @ts-ignore
+    .cryptoBalances(address)
+    .call({ from: adminAccount.address });
+  const stripeBalance = await mrnContract.methods
+    // @ts-ignore
+    .stripeBalances(address)
+    .call({ from: adminAccount.address });
+
+  return { totalBalance, cryptoBalance, stripeBalance };
 };
 
 export { createWallet, getAccessToken };

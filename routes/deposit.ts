@@ -6,6 +6,7 @@ import User from "../models/users";
 
 import { depositSchema, ipnSchema } from "../validation/deposit";
 import { createTransaction } from "../utils/coinpayment";
+import { mint } from "../utils/venly";
 
 const options = { abortEarly: false, stripUnknown: true };
 const client = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -117,7 +118,12 @@ export let depositRoute = [
         const amount = request.payload["data"]["object"]["amount"];
         console.log(cus_id);
         const user = await User.findOne({ cus_id: cus_id });
-        console.log(user.wallet.address);
+        console.log(user.wallet.address, amount);
+        try {
+          await mint(user.wallet.address, amount);
+        } catch (error) {
+          console.log(error);
+        }
         console.log(request.payload["data"]["object"]["receipt_url"]);
         return response.response("Success");
       }

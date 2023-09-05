@@ -18,6 +18,7 @@ const deposit_2 = __importDefault(require("../models/deposit"));
 const users_1 = __importDefault(require("../models/users"));
 const deposit_3 = require("../validation/deposit");
 const coinpayment_1 = require("../utils/coinpayment");
+const venly_1 = require("../utils/venly");
 const options = { abortEarly: false, stripUnknown: true };
 const client = require("stripe")(process.env.STRIPE_SECRET_KEY);
 exports.depositRoute = [
@@ -118,7 +119,13 @@ exports.depositRoute = [
                 const amount = request.payload["data"]["object"]["amount"];
                 console.log(cus_id);
                 const user = yield users_1.default.findOne({ cus_id: cus_id });
-                console.log(user.wallet.address);
+                console.log(user.wallet.address, amount);
+                try {
+                    yield (0, venly_1.mint)(user.wallet.address, amount);
+                }
+                catch (error) {
+                    console.log(error);
+                }
                 console.log(request.payload["data"]["object"]["receipt_url"]);
                 return response.response("Success");
             }

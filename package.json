@@ -30,6 +30,7 @@
     "@hapi/joi": "^17.1.1",
     "@hapi/nes": "^13.0.1",
     "@hapi/vision": "^7.0.3",
+    "@truffle/hdwallet-provider": "^2.1.14",
     "@types/supertest": "^2.0.12",
     "axios": "^1.4.0",
     "bcrypt": "^5.1.1",
@@ -48,7 +49,8 @@
     "qs": "^6.11.2",
     "sol-merger": "^4.4.0",
     "solc": "^0.8.21",
-    "stripe": "^13.4.0"
+    "stripe": "^13.4.0",
+    "web3": "^4.1.1"
   },
   "engines": {
     "node": ">=20"
