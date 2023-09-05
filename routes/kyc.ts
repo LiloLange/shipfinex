@@ -182,15 +182,13 @@ export let kycRoute = [
     method: "GET",
     path: "/websdk",
     options: {
-      auth: "jwt",
+      // auth: "jwt",
       description: "Get an KYC by id",
       plugins: getSingleKYCSwagger,
       tags: ["api", "kyc"],
       handler: async (request: Request, response: ResponseToolkit) => {
         try {
-          const accessToken = await getAccessToken(
-            request.auth.credentials.userId
-          );
+          const accessToken = await getAccessToken("64f6f3f648493e8818bc2095");
           return response.response(accessToken);
         } catch (error) {
           console.log(error);
