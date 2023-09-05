@@ -8,6 +8,8 @@ import { mileStoneRoute } from "./milestone";
 import { projectRoute } from "./project";
 import { transactionRoute } from "./transaction";
 import { vesselRoute } from "./vessel";
+import { investmentRoute } from "./investment";
+import { depositRoute } from "./deposit";
 
 const prefix = `/api/${config.apiVersion}`;
 
@@ -29,5 +31,11 @@ const setRoutes = async (server: Server) => {
 
   server.realm.modifiers.route.prefix = `/api/${config.apiVersion}/vessel`;
   server.route(vesselRoute);
+
+  server.realm.modifiers.route.prefix = `/api/${config.apiVersion}/invest`;
+  server.route(investmentRoute);
+
+  server.realm.modifiers.route.prefix = `/api/${config.apiVersion}/deposit`;
+  server.route(depositRoute);
 };
 export default setRoutes;

@@ -41,12 +41,15 @@ const inert_1 = __importDefault(require("@hapi/inert"));
 const hapi_swagger_1 = __importDefault(require("hapi-swagger"));
 const hapi_auth_jwt2_1 = __importDefault(require("hapi-auth-jwt2"));
 const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const process_1 = __importDefault(require("process"));
 const config_1 = __importDefault(require("./config"));
 const dbConnect_1 = __importDefault(require("./lib/dbConnect"));
 const routes_1 = __importDefault(require("./routes"));
 const validateUser = (decoded, request, h) => __awaiter(void 0, void 0, void 0, function* () {
     return { isValid: true, userId: decoded.userId };
 });
+const path = process_1.default.cwd();
 const init = () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, dbConnect_1.default)();
     const server = new hapi.Server({
@@ -78,9 +81,19 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
         validate: validateUser,
         verifyOptions: { algorithms: ["HS256"] },
     });
+    server.route({
+        method: "GET",
+        path: "/static/{param*}",
+        handler: {
+            directory: {
+                path: path_1.default.join(path, "static"),
+            },
+        },
+    });
     yield (0, routes_1.default)(server);
     yield server.start();
-    let fileName = __dirname + "/static";
+    console.log(path);
+    let fileName = path + "/static";
     if (!fs_1.default.existsSync(fileName)) {
         fs_1.default.mkdirSync(fileName);
     }

@@ -75,6 +75,7 @@ export const getAllUserSchema = Joi.object({
   email: Joi.string().email().optional().description("Email"),
   emailVerified: Joi.boolean().optional().description("EmailVerified"),
   role: Joi.string().optional().description("Role"),
-  kycVerified: Joi.boolean().optional().description("KycVerified"),
+  kycStatus: Joi.number().optional().description("kycStatus"),
+  status: Joi.boolean().optional().description("status"),
   page: Joi.number().optional().description("Page number"),
 });

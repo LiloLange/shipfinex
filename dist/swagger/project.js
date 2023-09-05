@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.tokenizationProjectSwagger = exports.getAllProjectSwagger = exports.createProjectSwagger = void 0;
+exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.tokenizationProjectSwagger = exports.getAllProjectSwagger = exports.uploadDocumentsSwagger = exports.createProjectSwagger = void 0;
 exports.createProjectSwagger = {
     "hapi-swagger": {
         security: [{ jwt: [] }],
@@ -11,6 +11,23 @@ exports.createProjectSwagger = {
             },
             400: {
                 description: "Input fields error.",
+            },
+            401: {
+                description: "Unauthorized",
+            },
+        },
+    },
+};
+exports.uploadDocumentsSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        payloadType: "form",
+        responses: {
+            201: {
+                description: "Documents successfully uploaded.",
+            },
+            400: {
+                description: "Uploading failed",
             },
             401: {
                 description: "Unauthorized",

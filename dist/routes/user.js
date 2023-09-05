@@ -16,6 +16,7 @@ exports.userRoute = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const fs_1 = __importDefault(require("fs"));
+const venly_1 = require("../utils/venly");
 const users_1 = __importDefault(require("../models/users"));
 const config_1 = __importDefault(require("../config"));
 const user_1 = require("../validation/user");
@@ -54,10 +55,14 @@ exports.userRoute = [
                         .response([{ message: "User already exists", path: ["email"] }])
                         .code(409);
                 }
+                const wallet = yield (0, venly_1.createWallet)();
+                console.log(wallet);
                 const newUser = new users_1.default(request.payload);
                 const { password } = newUser;
                 const hash = yield bcrypt_1.default.hash(password, 10);
                 newUser.password = hash;
+                newUser.wallet.address = wallet.result.address;
+                newUser.wallet.id = wallet.result.id;
                 const result = yield newUser.save();
                 const token = jsonwebtoken_1.default.sign({ userId: result._id, email: result.email }, config_1.default.jwtSecret, {
                     expiresIn: "3m",
@@ -102,38 +107,48 @@ exports.userRoute = [
             },
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            console.log("login request -->", request.payload);
             const user = yield users_1.default.findOne({ email: request.payload["email"] });
             if (user) {
                 const hpass = yield bcrypt_1.default.compare(request.payload["password"], user.password);
-                if (hpass) {
-                    if (user.emailVerified) {
-                        const otp = (0, otp_1.default)();
-                        user.otp = otp;
-                        const result = yield user.save();
-                        const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
-                        (0, sendMail_1.default)(result.email, content);
-                        return response.response({
-                            msg: "OTP Code has just sent to your email.",
-                        });
+                console.log("login request user-->", user);
+                try {
+                    if (hpass) {
+                        if (user.emailVerified) {
+                            const otp = (0, otp_1.default)();
+                            user.otp = otp;
+                            const result = yield user.save();
+                            const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
+                            (0, sendMail_1.default)(result.email, content);
+                            console.log("otp send -->");
+                            return response.response({
+                                msg: "OTP Code has just sent to your email.",
+                            });
+                        }
+                        else {
+                            const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
+                                expiresIn: "3m",
+                            });
+                            const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
+                            const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
+                            console.log("email send -->");
+                            (0, sendMail_1.default)(user.email, content);
+                            return response.response({
+                                msg: "Email verification has sent to your email",
+                            });
+                        }
                     }
                     else {
-                        const token = jsonwebtoken_1.default.sign({ userId: user._id, email: user.email }, config_1.default.jwtSecret, {
-                            expiresIn: "3m",
-                        });
-                        const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
-                        const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
-                        (0, sendMail_1.default)(user.email, content);
-                        return response.response({
-                            msg: "Email verification has sent to your email",
-                        });
+                        console.log("password incorrect -->");
+                        return response
+                            .response([
+                            { message: "Password is incorrect", path: ["password"] },
+                        ])
+                            .code(400);
                     }
                 }
-                else {
-                    return response
-                        .response([
-                        { message: "Password is incorrect", path: ["password"] },
-                    ])
-                        .code(400);
+                catch (error) {
+                    console.log(error);
                 }
             }
             return response
@@ -259,7 +274,13 @@ exports.userRoute = [
                     });
                     const fullName = user.firstName + " " + user.lastName;
                     return response
-                        .response({ token, fullName, role: user.role })
+                        .response({
+                        token,
+                        fullName,
+                        role: user.role,
+                        kycStatus: user.kycStatus,
+                        walletAddress: user.wallet.address,
+                    })
                         .code(200);
                 }
             }
@@ -323,7 +344,7 @@ exports.userRoute = [
         method: "GET",
         path: "/all",
         options: {
-            auth: "jwt",
+            // auth: "jwt",
             description: "Get all user with pagination, firstName, middleName, lastName, email, referralCode, role, emailVerified",
             plugins: user_2.getAllUserSwawgger,
             tags: ["api", "kyc"],
@@ -341,39 +362,64 @@ exports.userRoute = [
                 },
             },
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-                const userId = request.auth.credentials.userId;
-                const user = yield users_1.default.findById(userId);
-                const total = yield users_1.default.countDocuments();
-                if (user.role === "admin") {
-                    let { id, firstName, lastName, middleName, email, emailVerified, role, kycVerified, page, } = request.query;
-                    const query = {};
-                    if (id)
-                        query["_id"] = id;
-                    if (firstName)
-                        query["firstName"] = firstName;
-                    if (lastName)
-                        query["lastName"] = lastName;
-                    if (middleName)
-                        query["middleName"] = middleName;
-                    if (email)
-                        query["email"] = email;
-                    if (emailVerified !== undefined)
-                        query["emailVerified"] = emailVerified;
-                    if (role)
-                        query["role"] = role;
-                    if (kycVerified !== undefined)
-                        query["kycVerified"] = kycVerified;
-                    if (!page)
-                        page = 1;
-                    const result = users_1.default.find(query)
-                        .skip((page - 1) * 25)
-                        .limit(25);
-                    return { total: total, data: result, offset: page * 25 };
-                }
-                return response
-                    .response({ msg: "You have no permission to access." })
-                    .code(403);
+                // const userId = request.auth.credentials.userId;
+                // const user = await User.findById(userId);
+                // if (user.role === "admin") {
+                let { id, firstName, lastName, middleName, email, emailVerified, role, kycStatus, page, status, } = request.query;
+                const query = {};
+                if (id)
+                    query["_id"] = id;
+                if (firstName)
+                    query["firstName"] = firstName;
+                if (lastName)
+                    query["lastName"] = lastName;
+                if (middleName)
+                    query["middleName"] = middleName;
+                if (email)
+                    query["email"] = email;
+                if (emailVerified !== undefined)
+                    query["emailVerified"] = emailVerified;
+                if (role)
+                    query["role"] = role;
+                query["kycStatus"] = 0;
+                const pendingCount = yield users_1.default.countDocuments(query);
+                query["kycStatus"] = 1;
+                const approvedCount = yield users_1.default.countDocuments(query);
+                query["kycStatus"] = 2;
+                const rejectCount = yield users_1.default.countDocuments(query);
+                delete query["kycStatus"];
+                query["status"] = true;
+                const activeCount = yield users_1.default.countDocuments(query);
+                query["status"] = false;
+                const inactiveCount = yield users_1.default.countDocuments(query);
+                delete query["status"];
+                if (kycStatus !== undefined)
+                    query["kycStatus"] = kycStatus;
+                if (status !== undefined)
+                    query["status"] = status;
+                const total = yield users_1.default.countDocuments(query);
+                if (!page)
+                    page = 1;
+                const result = yield users_1.default.find(query)
+                    .sort({ createdAt: -1 })
+                    .skip((page - 1) * 25)
+                    .limit(25);
+                console.log(result);
+                return {
+                    total,
+                    pendingCount,
+                    approvedCount,
+                    rejectCount,
+                    activeCount,
+                    inactiveCount,
+                    data: result,
+                    offset: page * 25,
+                };
             }),
+            // return response
+            //   .response({ msg: "You have no permission to access." })
+            //   .code(403);
+            // },
         },
     },
     {

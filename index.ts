@@ -6,6 +6,8 @@ import HapiSwagger from "hapi-swagger";
 import HapiAuthJwt2 from "hapi-auth-jwt2";
 
 import fs from "fs";
+import Path from "path";
+import process from "process";
 
 import config from "./config";
 import connectDB from "./lib/dbConnect";
@@ -15,6 +17,7 @@ const validateUser = async (decoded, request, h) => {
   return { isValid: true, userId: decoded.userId };
 };
 
+const path = process.cwd();
 const init = async () => {
   await connectDB();
   const server: hapi.Server = new hapi.Server({
@@ -47,12 +50,21 @@ const init = async () => {
     validate: validateUser,
     verifyOptions: { algorithms: ["HS256"] },
   });
-
+  server.route({
+    method: "GET",
+    path: "/static/{param*}",
+    handler: {
+      directory: {
+        path: Path.join(path, "static"),
+      },
+    },
+  });
   await setRoutes(server);
 
   await server.start();
 
-  let fileName = __dirname + "/static";
+  console.log(path);
+  let fileName = path + "/static";
   if (!fs.existsSync(fileName)) {
     fs.mkdirSync(fileName);
   }

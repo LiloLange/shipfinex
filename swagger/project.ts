@@ -16,6 +16,24 @@ export const createProjectSwagger = {
   },
 };
 
+export const uploadDocumentsSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    payloadType: "form",
+    responses: {
+      201: {
+        description: "Documents successfully uploaded.",
+      },
+      400: {
+        description: "Uploading failed",
+      },
+      401: {
+        description: "Unauthorized",
+      },
+    },
+  },
+};
+
 export const getAllProjectSwagger = {
   "hapi-swagger": {
     security: [{ jwt: [] }],

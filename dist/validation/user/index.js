@@ -75,7 +75,8 @@ exports.getAllUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().optional().description("Email"),
     emailVerified: joi_1.default.boolean().optional().description("EmailVerified"),
     role: joi_1.default.string().optional().description("Role"),
-    kycVerified: joi_1.default.boolean().optional().description("KycVerified"),
+    kycStatus: joi_1.default.number().optional().description("kycStatus"),
+    status: joi_1.default.boolean().optional().description("status"),
     page: joi_1.default.number().optional().description("Page number"),
 });
 //# sourceMappingURL=index.js.map

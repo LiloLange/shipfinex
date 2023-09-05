@@ -22,6 +22,7 @@ import {
 } from "../validation/kyc";
 import getCurrentLoalTime from "../utils/getCurrentLoalTime";
 import User from "../models/users";
+import { UpdateKYCPayload } from "../interfaces";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let kycRoute = [
@@ -52,52 +53,69 @@ export let kycRoute = [
         if (authUser.role !== "admin")
           return response.response({ msg: "Permission Error" }).code(403);
         let { status, user, page } = request.query;
-        let result;
-        const query = {
-          "user.role": user,
-        };
+        let result,
+          query = {};
+        if (user) query["user.role"] = user;
         if (status) {
-          query["status.kycStatus"] = status;
+          query["reviewStatus"] = status;
         }
         if (page) {
           page = parseInt(page);
         } else page = 1;
-        if (user) {
-          const pipeline = [
-            {
-              $match: { userId: { $ne: null } },
-            },
-            {
-              $lookup: {
-                from: "users",
-                localField: "userId",
-                foreignField: "_id",
-                as: "user",
-              },
-            },
-            {
-              $match: query,
-            },
-            {
-              $project: {
-                user: 0,
-              },
-            },
-            {
-              $skip: (page - 1) * 10,
-            },
-            {
-              $limit: 10,
-            },
-          ];
+        const lookup = {
+          $lookup: {
+            from: "users",
+            localField: "externalUserId",
+            foreignField: "_id",
+            as: "user",
+          },
+        };
+        const unwind = {
+          $unwind: "$user",
+        };
+        const match = {
+          $match: query,
+        };
+        const project = {
+          $project: {
+            "user.middleName": 0,
+            "user._id": 0,
+            "user.password": 0,
+            "user.emailVerified": 0,
+            "user.doneMilestones": 0,
+            "user.transactions": 0,
+            "user.otp": 0,
+          },
+        };
+        const sort = {
+          $sort: {
+            createdAtMs: -1,
+          },
+        };
+        const skip = {
+          $skip: (page - 1) * 25,
+        };
+        const limit = {
+          $limit: 25,
+        };
+        const group = {
+          $group: {
+            _id: null,
+            count: { $sum: 1 },
+          },
+        };
+        const pipeline = [];
+        pipeline.push(lookup, unwind);
+        if (query) pipeline.push(match);
+        pipeline.push(group);
+        const countTotal: Array<Object> = await KYC.aggregate(pipeline);
+        let total = 0;
+        if (countTotal.length > 0) total = countTotal[0]["count"];
+        pipeline.splice(3, 1);
+        pipeline.push(sort, project, skip, limit);
 
-          result = await KYC.aggregate(pipeline);
-        } else {
-          result = await KYC.find(query)
-            .skip((page - 1) * 10)
-            .limit(10);
-        }
-        return result;
+        result = await KYC.aggregate(pipeline);
+        return { total: total, data: result, offset: 25 * page };
       },
     },
   },
@@ -105,7 +123,7 @@ export let kycRoute = [
     method: "GET",
     path: "/{applicantId}",
     options: {
-      // auth: "jwt",
+      auth: "jwt",
       description: "Get an KYC by id",
       plugins: getSingleKYCSwagger,
       tags: ["api", "kyc"],
@@ -115,20 +133,46 @@ export let kycRoute = [
           const applicantVeriff = await getApplicantVerifStep(
             request.params.applicantId
           );
-          // const res = await getImage(
-          //   applicant.inspectionId,
-          //   applicantVeriff.IDENTITY.imageIds[0]
-          // );
-          // const buffer = Buffer.from(res, "binary");
-          return response.response({
-            applicant,
-            applicantVeriff,
-            // image: buffer,
-          });
+          try {
+            return response.response({
+              applicant,
+              applicantVeriff,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         } catch (error) {
           //console.log(error);
           return response
             .response({ msg: "KYC not found with given id" })
+            .code(404);
+        }
+      },
+    },
+  },
+  {
+    method: "GET",
+    path: "/image/{inspectionId}/{imageId}",
+    options: {
+      auth: "jwt",
+      description: "Get an KYC image",
+      plugins: getSingleKYCSwagger,
+      tags: ["api", "kyc"],
+      handler: async (request: Request, response: ResponseToolkit) => {
+        try {
+          let image, buffer;
+          const { inspectionId, imageId } = request.params;
+          try {
+            image = await getImage(inspectionId, imageId);
+            buffer = Buffer.from(image, "binary");
+            return response.response(buffer).type("arrayBuffer");
+          } catch (error) {
+            console.log(error);
+          }
+        } catch (error) {
+          //console.log(error);
+          return response
+            .response({ msg: "KYC image not found with given id" })
             .code(404);
         }
       },
@@ -208,7 +252,7 @@ export let kycRoute = [
       if (request.payload["type"] === "applicantCreated") {
         const newKYC = new KYC(request.payload);
         newKYC.history.push({
-          type: "Creat",
+          type: "Create",
           createdAt: newKYC.createdAtMs,
         });
         try {

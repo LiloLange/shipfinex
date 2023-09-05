@@ -27,11 +27,11 @@ const projectSchema = new Schema({
         required: true,
     },
     vesselType: {
-        type: Schema.Types.ObjectId,
-        ref: "vessel",
+        type: String,
+        required: true,
     },
     builtYear: {
-        type: Number,
+        type: Date,
         required: true,
     },
     flag: {
@@ -92,7 +92,15 @@ const projectSchema = new Schema({
         type: Boolean,
         default: false,
     },
-});
+    status: {
+        type: Boolean,
+        default: true,
+    },
+    allowance: {
+        type: Number,
+        default: 0,
+    },
+}, { timestamps: true });
 const Project = mongoose_1.default.model("project", projectSchema);
 exports.default = Project;
 //# sourceMappingURL=projects.js.map

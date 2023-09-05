@@ -2,7 +2,7 @@ import { Request, ResponseToolkit } from "@hapi/hapi";
 import Jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import fs from "fs";
-
+import { createWallet } from "../utils/venly";
 import User from "../models/users";
 import config from "../config";
 import {
@@ -64,10 +64,14 @@ export let userRoute = [
             .response([{ message: "User already exists", path: ["email"] }])
             .code(409);
         }
+        const wallet = await createWallet();
+        console.log(wallet);
         const newUser: any = new User(request.payload);
         const { password } = newUser;
         const hash = await bcrypt.hash(password, 10);
         newUser.password = hash;
+        newUser.wallet.address = wallet.result.address;
+        newUser.wallet.id = wallet.result.id;
         const result = await newUser.save();
         const token = Jwt.sign(
           { userId: result._id, email: result.email },
@@ -115,44 +119,52 @@ export let userRoute = [
       },
     },
     handler: async (request: Request, response: ResponseToolkit) => {
+      console.log("login request -->", request.payload);
       const user = await User.findOne({ email: request.payload["email"] });
       if (user) {
         const hpass = await bcrypt.compare(
           request.payload["password"],
           user.password
         );
-
-        if (hpass) {
-          if (user.emailVerified) {
-            const otp = GenerateOTP();
-            user.otp = otp;
-            const result = await user.save();
-            const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
-            sendMail(result.email, content);
-            return response.response({
-              msg: "OTP Code has just sent to your email.",
-            });
+        console.log("login request user-->", user);
+        try {
+          if (hpass) {
+            if (user.emailVerified) {
+              const otp = GenerateOTP();
+              user.otp = otp;
+              const result = await user.save();
+              const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your OTP code :</p><button style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">${result.otp}</button></div>`;
+              sendMail(result.email, content);
+              console.log("otp send -->");
+              return response.response({
+                msg: "OTP Code has just sent to your email.",
+              });
+            } else {
+              const token = Jwt.sign(
+                { userId: user._id, email: user.email },
+                config.jwtSecret,
+                {
+                  expiresIn: "3m",
+                }
+              );
+              const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
+              const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
+              console.log("email send -->");
+              sendMail(user.email, content);
+              return response.response({
+                msg: "Email verification has sent to your email",
+              });
+            }
           } else {
-            const token = Jwt.sign(
-              { userId: user._id, email: user.email },
-              config.jwtSecret,
-              {
-                expiresIn: "3m",
-              }
-            );
-            const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
-            const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
-            sendMail(user.email, content);
-            return response.response({
-              msg: "Email verification has sent to your email",
-            });
+            console.log("password incorrect -->");
+            return response
+              .response([
+                { message: "Password is incorrect", path: ["password"] },
+              ])
+              .code(400);
           }
-        } else {
-          return response
-            .response([
-              { message: "Password is incorrect", path: ["password"] },
-            ])
-            .code(400);
+        } catch (error) {
+          console.log(error);
         }
       }
       return response
@@ -289,7 +301,13 @@ export let userRoute = [
           );
           const fullName = user.firstName + " " + user.lastName;
           return response
-            .response({ token, fullName, role: user.role })
+            .response({
+              token,
+              fullName,
+              role: user.role,
+              kycStatus: user.kycStatus,
+              walletAddress: user.wallet.address,
+            })
             .code(200);
         }
       }
@@ -353,7 +371,7 @@ export let userRoute = [
     method: "GET",
     path: "/all",
     options: {
-      auth: "jwt",
+      // auth: "jwt",
       description:
         "Get all user with pagination, firstName, middleName, lastName, email, referralCode, role, emailVerified",
       plugins: getAllUserSwawgger,
@@ -372,41 +390,68 @@ export let userRoute = [
         },
       },
       handler: async (request: Request, response: ResponseToolkit) => {
-        const userId = request.auth.credentials.userId;
-        const user = await User.findById(userId);
-        const total = await User.countDocuments();
-        if (user.role === "admin") {
-          let {
-            id,
-            firstName,
-            lastName,
-            middleName,
-            email,
-            emailVerified,
-            role,
-            kycVerified,
-            page,
-          } = request.query;
-          const query = {};
-          if (id) query["_id"] = id;
-          if (firstName) query["firstName"] = firstName;
-          if (lastName) query["lastName"] = lastName;
-          if (middleName) query["middleName"] = middleName;
-          if (email) query["email"] = email;
-          if (emailVerified !== undefined)
-            query["emailVerified"] = emailVerified;
-          if (role) query["role"] = role;
-          if (kycVerified !== undefined) query["kycVerified"] = kycVerified;
-          if (!page) page = 1;
-          const result = User.find(query)
-            .skip((page - 1) * 25)
-            .limit(25);
-          return { total: total, data: result, offset: page * 25 };
-        }
-        return response
-          .response({ msg: "You have no permission to access." })
-          .code(403);
+        // const userId = request.auth.credentials.userId;
+        // const user = await User.findById(userId);
+        // if (user.role === "admin") {
+        let {
+          id,
+          firstName,
+          lastName,
+          middleName,
+          email,
+          emailVerified,
+          role,
+          kycStatus,
+          page,
+          status,
+        } = request.query;
+        const query = {};
+        if (id) query["_id"] = id;
+        if (firstName) query["firstName"] = firstName;
+        if (lastName) query["lastName"] = lastName;
+        if (middleName) query["middleName"] = middleName;
+        if (email) query["email"] = email;
+        if (emailVerified !== undefined) query["emailVerified"] = emailVerified;
+        if (role) query["role"] = role;
+        query["kycStatus"] = 0;
+        const pendingCount = await User.countDocuments(query);
+        query["kycStatus"] = 1;
+        const approvedCount = await User.countDocuments(query);
+        query["kycStatus"] = 2;
+        const rejectCount = await User.countDocuments(query);
+        delete query["kycStatus"];
+
+        query["status"] = true;
+        const activeCount = await User.countDocuments(query);
+        query["status"] = false;
+        const inactiveCount = await User.countDocuments(query);
+        delete query["status"];
+
+        if (kycStatus !== undefined) query["kycStatus"] = kycStatus;
+        if (status !== undefined) query["status"] = status;
+        const total = await User.countDocuments(query);
+        if (!page) page = 1;
+
+        const result = await User.find(query)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * 25)
+          .limit(25);
+        console.log(result);
+        return {
+          total,
+          pendingCount,
+          approvedCount,
+          rejectCount,
+          activeCount,
+          inactiveCount,
+          data: result,
+          offset: page * 25,
+        };
       },
+      // return response
+      //   .response({ msg: "You have no permission to access." })
+      //   .code(403);
+      // },
     },
   },
   {

@@ -11,5 +11,9 @@ exports.default = {
     apiVersion: process.env.API_VERSION,
     sumsubToken: process.env.SUMSUB_TOKEN,
     sumsubSecret: process.env.SUMSUB_SECRET,
+    venlyclientId: process.env.VENLY_CLIENT_ID,
+    venlyclientSecret: process.env.VENLY_CLIENT_SECRET,
+    coinpaymentKey: process.env.COINPAYMENT_KEY,
+    coinpaymentSecret: process.env.COINPAYMENT_SECRET,
 };
 //# sourceMappingURL=index.js.map

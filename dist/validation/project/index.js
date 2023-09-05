@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProjectSchema = exports.tokenizationProjectSchema = exports.getProjectSchema = exports.projectCreateSchema = void 0;
+exports.deleteProjectSchema = exports.tokenizationProjectSchema = exports.getProjectSchema = exports.uploadDocumentSchema = exports.projectCreateSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.projectCreateSchema = joi_1.default.object({
     projectName: joi_1.default.string().required(),
@@ -11,14 +11,24 @@ exports.projectCreateSchema = joi_1.default.object({
     description: joi_1.default.string().required(),
     imoNumber: joi_1.default.number().required(),
     vesselType: joi_1.default.string().required(),
-    builtYear: joi_1.default.number().required(),
+    builtYear: joi_1.default.date().required(),
     flag: joi_1.default.string().required(),
     estimatedEarning: joi_1.default.number().required(),
+});
+exports.uploadDocumentSchema = joi_1.default.object({
+    technicalReport: joi_1.default.any().meta({ swaggerType: "file" }).required(),
+    financialReport: joi_1.default.any().meta({ swaggerType: "file" }).required(),
+    commercialReport: joi_1.default.any().meta({ swaggerType: "file" }).required(),
+    risk: joi_1.default.any().meta({ swaggerType: "file" }).required(),
+    community: joi_1.default.any().meta({ swaggerType: "file" }).required(),
+    vesselCertificate: joi_1.default.any().meta({ swaggerType: "file" }).required(),
 });
 exports.getProjectSchema = joi_1.default.object({
     tokenized: joi_1.default.boolean().optional().description("Project tokenized"),
     sto: joi_1.default.boolean().optional().description("Whether to include user data"),
     page: joi_1.default.number().optional().description("Page number"),
+    status: joi_1.default.boolean().optional().description("Status"),
+    allowance: joi_1.default.number().optional().description("Allowance"),
 });
 exports.tokenizationProjectSchema = joi_1.default.object({
     tokenName: joi_1.default.string().required(),

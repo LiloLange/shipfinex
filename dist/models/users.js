@@ -37,9 +37,9 @@ const userSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    kycVerified: {
-        type: Boolean,
-        default: false,
+    kycStatus: {
+        type: Number,
+        default: 0,
     },
     status: {
         type: Boolean,
@@ -57,14 +57,6 @@ const userSchema = new Schema({
             },
         },
     ],
-    createdAt: {
-        type: Date,
-        default: Date.now(),
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now(),
-    },
     otp: {
         type: String,
     },
@@ -76,7 +68,17 @@ const userSchema = new Schema({
             },
         },
     ],
-});
+    wallet: {
+        id: {
+            type: String,
+            required: true,
+        },
+        address: {
+            type: String,
+            required: true,
+        },
+    },
+}, { timestamps: true });
 const User = mongoose_1.default.model("user", userSchema);
 exports.default = User;
 //# sourceMappingURL=users.js.map

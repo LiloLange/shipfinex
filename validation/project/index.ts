@@ -6,15 +6,26 @@ export const projectCreateSchema = Joi.object({
   description: Joi.string().required(),
   imoNumber: Joi.number().required(),
   vesselType: Joi.string().required(),
-  builtYear: Joi.number().required(),
+  builtYear: Joi.date().required(),
   flag: Joi.string().required(),
   estimatedEarning: Joi.number().required(),
+});
+
+export const uploadDocumentSchema = Joi.object({
+  technicalReport: Joi.any().meta({ swaggerType: "file" }).required(),
+  financialReport: Joi.any().meta({ swaggerType: "file" }).required(),
+  commercialReport: Joi.any().meta({ swaggerType: "file" }).required(),
+  risk: Joi.any().meta({ swaggerType: "file" }).required(),
+  community: Joi.any().meta({ swaggerType: "file" }).required(),
+  vesselCertificate: Joi.any().meta({ swaggerType: "file" }).required(),
 });
 
 export const getProjectSchema = Joi.object({
   tokenized: Joi.boolean().optional().description("Project tokenized"),
   sto: Joi.boolean().optional().description("Whether to include user data"),
   page: Joi.number().optional().description("Page number"),
+  status: Joi.boolean().optional().description("Status"),
+  allowance: Joi.number().optional().description("Allowance"),
 });
 
 export const tokenizationProjectSchema = Joi.object({
