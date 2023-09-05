@@ -107,7 +107,7 @@ export let depositRoute = [
     method: "POST",
     path: "/stripe/webhook",
     handler: async (request: Request, response: ResponseToolkit) => {
-      console.log(request.payload);
+      console.log(request.payload["type"]);
       const sig = request.headers["stripe-signature"];
 
       let event;
@@ -118,6 +118,15 @@ export let depositRoute = [
           sig,
           "whsec_tJG83GCYYqPehdBfLcfkPlwcfdZSMb3d"
         );
+        if (request.payload["type"] === "charge.succeeded") {
+          const cus_id = request.payload["data"]["object"]["customer"];
+          const amount = request.payload["data"]["object"]["amount"];
+          console.log(cus_id);
+          const user = await User.findOne({ cus_id: cus_id });
+          console.log(user.wallet.address);
+          console.log(request.payload["data"]["object"]["receipt_url"]);
+          return response.response("Success");
+        }
       } catch (err) {
         return response.response(`Webhook Error: ${err.message}`).code(400);
       }
