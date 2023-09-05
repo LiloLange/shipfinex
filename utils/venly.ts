@@ -99,10 +99,10 @@ const createWallet = async () => {
 
 const localKeyProvider = new HDWalletProvider({
   privateKeys: [adminPrivateKey],
-  providerOrUrl: "https://ethereum-goerli.publicnode.com",
+  providerOrUrl:
+    "https://eth-goerli.g.alchemy.com/v2/KqDagOiXKFQ8T_QzPNpKBk1Yn-3Zgtgl",
 });
 
-// @ts-ignore
 const web3 = new Web3(localKeyProvider);
 
 const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
@@ -112,39 +112,37 @@ const mrnContract = new web3.eth.Contract(
   MRN_CONTRACT_ADDRESS
 );
 
-export const mint = async (to: string, amount: string) => {
-  await mrnContract.methods
-    // @ts-ignore
-    .mint(to, amount)
-    .send({ from: adminAccount.address })
-    .on("transactionHash", (hash: string) => {})
-    // @ts-ignore
-    .on("confirmation", (confirmationNumber: number, recepit: any) => {})
-    .on("error", (error: any) => {});
+export const mint = async (to: string, amount: number, type: boolean) => {
+  try {
+    await mrnContract.methods
+      .mint(to, web3.utils.toWei(web3.utils.toBN(amount), "ether"), type)
+      .send({ from: adminAccount.address });
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-export const burn = async (from: string, amount: string) => {
-  await mrnContract.methods
-    // @ts-ignore
-    .burn(from, amount)
-    .send({ from: adminAccount.address })
-    .on("transactionHash", (hash: string) => {})
-    // @ts-ignore
-    .on("confirmation", (confirmationNumber: number, recepit: any) => {})
-    .on("error", (error: any) => {});
+export const burn = async (from: string, amount: number, type: boolean) => {
+  try {
+    await mrnContract.methods
+      .burn(from, web3.utils.toWei(web3.utils.toBN(amount), "ether"), type)
+      .send({ from: adminAccount.address })
+      .on("transactionHash", (hash: string) => {})
+      .on("confirmation", (confirmationNumber: number, recepit: any) => {})
+      .on("error", (error: any) => {});
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 export const getBalance = async (address: string) => {
   const totalBalance = await mrnContract.methods
-    // @ts-ignore
     .balanceOf(address)
     .call({ from: adminAccount.address });
   const cryptoBalance = await mrnContract.methods
-    // @ts-ignore
     .cryptoBalances(address)
     .call({ from: adminAccount.address });
   const stripeBalance = await mrnContract.methods
-    // @ts-ignore
     .stripeBalances(address)
     .call({ from: adminAccount.address });
 

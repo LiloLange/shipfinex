@@ -15,7 +15,7 @@ export let investmentRoute = [
     method: "POST",
     path: "/",
     options: {
-      // auth: "jwt",
+      auth: "jwt",
       description: "Investment on project",
       plugins: investSwagger,
       tags: ["api", "user"],
@@ -36,7 +36,7 @@ export let investmentRoute = [
     handler: async (request: Request, response: ResponseToolkit) => {
       try {
         const payload = {
-          userId: "64f5ba3786d7cb9d929bed60",
+          userId: request.auth.credentials.userId,
           projectId: request.payload["projectId"],
           amount: request.payload["amount"],
         };
@@ -53,7 +53,7 @@ export let investmentRoute = [
     method: "GET",
     path: "/",
     options: {
-      // auth: "jwt",
+      auth: "jwt",
       description:
         "Get investment with pagination, userId, projectId, status, page",
       plugins: getInvestmentSwagger,

@@ -379,7 +379,7 @@ export let userRoute = [
     method: "GET",
     path: "/all",
     options: {
-      // auth: "jwt",
+      auth: "jwt",
       description:
         "Get all user with pagination, firstName, middleName, lastName, email, referralCode, role, emailVerified",
       plugins: getAllUserSwawgger,
@@ -398,68 +398,69 @@ export let userRoute = [
         },
       },
       handler: async (request: Request, response: ResponseToolkit) => {
-        // const userId = request.auth.credentials.userId;
-        // const user = await User.findById(userId);
-        // if (user.role === "admin") {
-        let {
-          id,
-          firstName,
-          lastName,
-          middleName,
-          email,
-          emailVerified,
-          role,
-          kycStatus,
-          page,
-          status,
-        } = request.query;
-        const query = {};
-        if (id) query["_id"] = id;
-        if (firstName) query["firstName"] = firstName;
-        if (lastName) query["lastName"] = lastName;
-        if (middleName) query["middleName"] = middleName;
-        if (email) query["email"] = email;
-        if (emailVerified !== undefined) query["emailVerified"] = emailVerified;
-        if (role) query["role"] = role;
-        query["kycStatus"] = 0;
-        const pendingCount = await User.countDocuments(query);
-        query["kycStatus"] = 1;
-        const approvedCount = await User.countDocuments(query);
-        query["kycStatus"] = 2;
-        const rejectCount = await User.countDocuments(query);
-        delete query["kycStatus"];
+        const userId = request.auth.credentials.userId;
+        const user = await User.findById(userId);
+        if (user.role === "admin") {
+          let {
+            id,
+            firstName,
+            lastName,
+            middleName,
+            email,
+            emailVerified,
+            role,
+            kycStatus,
+            page,
+            status,
+          } = request.query;
+          const query = {};
+          if (id) query["_id"] = id;
+          if (firstName) query["firstName"] = firstName;
+          if (lastName) query["lastName"] = lastName;
+          if (middleName) query["middleName"] = middleName;
+          if (email) query["email"] = email;
+          if (emailVerified !== undefined)
+            query["emailVerified"] = emailVerified;
+          if (role) query["role"] = role;
+          query["kycStatus"] = 0;
+          const pendingCount = await User.countDocuments(query);
+          query["kycStatus"] = 1;
+          const approvedCount = await User.countDocuments(query);
+          query["kycStatus"] = 2;
+          const rejectCount = await User.countDocuments(query);
+          delete query["kycStatus"];
 
-        query["status"] = true;
-        const activeCount = await User.countDocuments(query);
-        query["status"] = false;
-        const inactiveCount = await User.countDocuments(query);
-        delete query["status"];
+          query["status"] = true;
+          const activeCount = await User.countDocuments(query);
+          query["status"] = false;
+          const inactiveCount = await User.countDocuments(query);
+          delete query["status"];
 
-        if (kycStatus !== undefined) query["kycStatus"] = kycStatus;
-        if (status !== undefined) query["status"] = status;
-        const total = await User.countDocuments(query);
-        if (!page) page = 1;
+          if (kycStatus !== undefined) query["kycStatus"] = kycStatus;
+          if (status !== undefined) query["status"] = status;
+          const total = await User.countDocuments(query);
+          if (!page) page = 1;
 
-        const result = await User.find(query)
-          .sort({ createdAt: -1 })
-          .skip((page - 1) * 25)
-          .limit(25);
-        console.log(result);
-        return {
-          total,
-          pendingCount,
-          approvedCount,
-          rejectCount,
-          activeCount,
-          inactiveCount,
-          data: result,
-          offset: page * 25,
-        };
+          const result = await User.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * 25)
+            .limit(25);
+          console.log(result);
+          return {
+            total,
+            pendingCount,
+            approvedCount,
+            rejectCount,
+            activeCount,
+            inactiveCount,
+            data: result,
+            offset: page * 25,
+          };
+        }
+        return response
+          .response({ msg: "You have no permission to access." })
+          .code(403);
       },
-      // return response
-      //   .response({ msg: "You have no permission to access." })
-      //   .code(403);
-      // },
     },
   },
   {

@@ -99,45 +99,44 @@ const createWallet = () => __awaiter(void 0, void 0, void 0, function* () {
 exports.createWallet = createWallet;
 const localKeyProvider = new hdwallet_provider_1.default({
     privateKeys: [adminPrivateKey],
-    providerOrUrl: "https://ethereum-goerli.publicnode.com",
+    providerOrUrl: "https://eth-goerli.g.alchemy.com/v2/KqDagOiXKFQ8T_QzPNpKBk1Yn-3Zgtgl",
 });
-// @ts-ignore
 const web3 = new web3_1.default(localKeyProvider);
 const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
 const mrnContract = new web3.eth.Contract(MRN_json_1.default, MRN_CONTRACT_ADDRESS);
-const mint = (to, amount) => __awaiter(void 0, void 0, void 0, function* () {
-    yield mrnContract.methods
-        // @ts-ignore
-        .mint(to, amount)
-        .send({ from: adminAccount.address })
-        .on("transactionHash", (hash) => { })
-        // @ts-ignore
-        .on("confirmation", (confirmationNumber, recepit) => { })
-        .on("error", (error) => { });
+const mint = (to, amount, type) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield mrnContract.methods
+            .mint(to, web3.utils.toWei(web3.utils.toBN(amount), "ether"), type)
+            .send({ from: adminAccount.address });
+    }
+    catch (err) {
+        console.log(err);
+    }
 });
 exports.mint = mint;
-const burn = (from, amount) => __awaiter(void 0, void 0, void 0, function* () {
-    yield mrnContract.methods
-        // @ts-ignore
-        .burn(from, amount)
-        .send({ from: adminAccount.address })
-        .on("transactionHash", (hash) => { })
-        // @ts-ignore
-        .on("confirmation", (confirmationNumber, recepit) => { })
-        .on("error", (error) => { });
+const burn = (from, amount, type) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield mrnContract.methods
+            .burn(from, web3.utils.toWei(web3.utils.toBN(amount), "ether"), type)
+            .send({ from: adminAccount.address })
+            .on("transactionHash", (hash) => { })
+            .on("confirmation", (confirmationNumber, recepit) => { })
+            .on("error", (error) => { });
+    }
+    catch (err) {
+        console.log(err);
+    }
 });
 exports.burn = burn;
 const getBalance = (address) => __awaiter(void 0, void 0, void 0, function* () {
     const totalBalance = yield mrnContract.methods
-        // @ts-ignore
         .balanceOf(address)
         .call({ from: adminAccount.address });
     const cryptoBalance = yield mrnContract.methods
-        // @ts-ignore
         .cryptoBalances(address)
         .call({ from: adminAccount.address });
     const stripeBalance = yield mrnContract.methods
-        // @ts-ignore
         .stripeBalances(address)
         .call({ from: adminAccount.address });
     return { totalBalance, cryptoBalance, stripeBalance };

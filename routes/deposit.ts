@@ -120,7 +120,7 @@ export let depositRoute = [
         const user = await User.findOne({ cus_id: cus_id });
         console.log(user.wallet.address, amount);
         try {
-          await mint(user.wallet.address, amount);
+          await mint(user.wallet.address, amount, false);
         } catch (error) {
           console.log(error);
         }

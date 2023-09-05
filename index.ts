@@ -12,6 +12,7 @@ import process from "process";
 import config from "./config";
 import connectDB from "./lib/dbConnect";
 import setRoutes from "./routes";
+import { mint } from "./utils/venly";
 
 const validateUser = async (decoded, request, h) => {
   return { isValid: true, userId: decoded.userId };

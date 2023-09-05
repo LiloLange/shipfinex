@@ -121,7 +121,7 @@ exports.depositRoute = [
                 const user = yield users_1.default.findOne({ cus_id: cus_id });
                 console.log(user.wallet.address, amount);
                 try {
-                    yield (0, venly_1.mint)(user.wallet.address, amount);
+                    yield (0, venly_1.mint)(user.wallet.address, amount, false);
                 }
                 catch (error) {
                     console.log(error);

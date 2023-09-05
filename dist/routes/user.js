@@ -348,7 +348,7 @@ exports.userRoute = [
         method: "GET",
         path: "/all",
         options: {
-            // auth: "jwt",
+            auth: "jwt",
             description: "Get all user with pagination, firstName, middleName, lastName, email, referralCode, role, emailVerified",
             plugins: user_2.getAllUserSwawgger,
             tags: ["api", "kyc"],
@@ -366,64 +366,64 @@ exports.userRoute = [
                 },
             },
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-                // const userId = request.auth.credentials.userId;
-                // const user = await User.findById(userId);
-                // if (user.role === "admin") {
-                let { id, firstName, lastName, middleName, email, emailVerified, role, kycStatus, page, status, } = request.query;
-                const query = {};
-                if (id)
-                    query["_id"] = id;
-                if (firstName)
-                    query["firstName"] = firstName;
-                if (lastName)
-                    query["lastName"] = lastName;
-                if (middleName)
-                    query["middleName"] = middleName;
-                if (email)
-                    query["email"] = email;
-                if (emailVerified !== undefined)
-                    query["emailVerified"] = emailVerified;
-                if (role)
-                    query["role"] = role;
-                query["kycStatus"] = 0;
-                const pendingCount = yield users_1.default.countDocuments(query);
-                query["kycStatus"] = 1;
-                const approvedCount = yield users_1.default.countDocuments(query);
-                query["kycStatus"] = 2;
-                const rejectCount = yield users_1.default.countDocuments(query);
-                delete query["kycStatus"];
-                query["status"] = true;
-                const activeCount = yield users_1.default.countDocuments(query);
-                query["status"] = false;
-                const inactiveCount = yield users_1.default.countDocuments(query);
-                delete query["status"];
-                if (kycStatus !== undefined)
-                    query["kycStatus"] = kycStatus;
-                if (status !== undefined)
-                    query["status"] = status;
-                const total = yield users_1.default.countDocuments(query);
-                if (!page)
-                    page = 1;
-                const result = yield users_1.default.find(query)
-                    .sort({ createdAt: -1 })
-                    .skip((page - 1) * 25)
-                    .limit(25);
-                console.log(result);
-                return {
-                    total,
-                    pendingCount,
-                    approvedCount,
-                    rejectCount,
-                    activeCount,
-                    inactiveCount,
-                    data: result,
-                    offset: page * 25,
-                };
+                const userId = request.auth.credentials.userId;
+                const user = yield users_1.default.findById(userId);
+                if (user.role === "admin") {
+                    let { id, firstName, lastName, middleName, email, emailVerified, role, kycStatus, page, status, } = request.query;
+                    const query = {};
+                    if (id)
+                        query["_id"] = id;
+                    if (firstName)
+                        query["firstName"] = firstName;
+                    if (lastName)
+                        query["lastName"] = lastName;
+                    if (middleName)
+                        query["middleName"] = middleName;
+                    if (email)
+                        query["email"] = email;
+                    if (emailVerified !== undefined)
+                        query["emailVerified"] = emailVerified;
+                    if (role)
+                        query["role"] = role;
+                    query["kycStatus"] = 0;
+                    const pendingCount = yield users_1.default.countDocuments(query);
+                    query["kycStatus"] = 1;
+                    const approvedCount = yield users_1.default.countDocuments(query);
+                    query["kycStatus"] = 2;
+                    const rejectCount = yield users_1.default.countDocuments(query);
+                    delete query["kycStatus"];
+                    query["status"] = true;
+                    const activeCount = yield users_1.default.countDocuments(query);
+                    query["status"] = false;
+                    const inactiveCount = yield users_1.default.countDocuments(query);
+                    delete query["status"];
+                    if (kycStatus !== undefined)
+                        query["kycStatus"] = kycStatus;
+                    if (status !== undefined)
+                        query["status"] = status;
+                    const total = yield users_1.default.countDocuments(query);
+                    if (!page)
+                        page = 1;
+                    const result = yield users_1.default.find(query)
+                        .sort({ createdAt: -1 })
+                        .skip((page - 1) * 25)
+                        .limit(25);
+                    console.log(result);
+                    return {
+                        total,
+                        pendingCount,
+                        approvedCount,
+                        rejectCount,
+                        activeCount,
+                        inactiveCount,
+                        data: result,
+                        offset: page * 25,
+                    };
+                }
+                return response
+                    .response({ msg: "You have no permission to access." })
+                    .code(403);
             }),
-            // return response
-            //   .response({ msg: "You have no permission to access." })
-            //   .code(403);
-            // },
         },
     },
     {

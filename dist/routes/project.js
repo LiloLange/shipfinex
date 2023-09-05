@@ -151,7 +151,7 @@ exports.projectRoute = [
         path: "/all",
         config: {
             description: "Get all project with filter",
-            // auth: "jwt",
+            auth: "jwt",
             plugins: project_2.getAllProjectSwagger,
             tags: ["api", "project"],
             validate: {
@@ -227,7 +227,7 @@ exports.projectRoute = [
         path: "/{projectId}/tokenization",
         config: {
             description: "Tokenize the Project",
-            // auth: "jwt",
+            auth: "jwt",
             plugins: project_2.tokenizationProjectSwagger,
             tags: ["api", "project"],
             validate: {
@@ -299,7 +299,7 @@ exports.projectRoute = [
         path: "/{projectId}/allow",
         config: {
             description: "Allow the Project",
-            // auth: "jwt",
+            auth: "jwt",
             plugins: project_2.tokenizationProjectSwagger,
             tags: ["api", "project"],
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
