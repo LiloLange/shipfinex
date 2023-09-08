@@ -51,12 +51,63 @@ export const getAllProjectSwagger = {
   },
 };
 
+export const claimProjectSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    responses: {
+      200: {
+        description: "Claim successfully",
+      },
+      400: {
+        description: "Request Param Error",
+      },
+      403: {
+        description: "Permission Error",
+      },
+    },
+  },
+};
+
+export const depositProjectSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    responses: {
+      200: {
+        description: "Deposit successfully",
+      },
+      400: {
+        description: "Request Param Error",
+      },
+      403: {
+        description: "Permission Error",
+      },
+    },
+  },
+};
+
 export const tokenizationProjectSwagger = {
   "hapi-swagger": {
     security: [{ jwt: [] }],
     responses: {
       200: {
-        description: "Get KYCs successfully",
+        description: "Tokenization successfully",
+      },
+      400: {
+        description: "Request Param Error",
+      },
+      401: {
+        description: "Unauthorized",
+      },
+    },
+  },
+};
+
+export const allowProjectSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    responses: {
+      200: {
+        description: "Project Allowance Successfully",
       },
       400: {
         description: "Request Param Error",

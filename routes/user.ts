@@ -13,7 +13,7 @@ import {
   getAllUserSchema,
   resendSchema,
 } from "../validation/user";
-
+import { findInvestmentsNumberByProjectOwner } from "../models/investments";
 import {
   createUserSwagger,
   loginUserSwagger,
@@ -456,6 +456,17 @@ export let userRoute = [
             data: result,
             offset: page * 25,
           };
+        }
+        if (user.role === "prowner") {
+          try {
+            const data = await findInvestmentsNumberByProjectOwner(userId);
+            return data;
+          } catch (error) {
+            console.log(error);
+            return response
+              .response({ msg: "Get investment data on prower side error" })
+              .code(500);
+          }
         }
         return response
           .response({ msg: "You have no permission to access." })

@@ -35,7 +35,7 @@ export const getAllKYCSwagger = {
 
 export const getSingleKYCSwagger = {
   "hapi-swagger": {
-    // security: [{ jwt: [] }],
+    security: [{ jwt: [] }],
     responses: {
       200: {
         description: "Get single KYC successfully",

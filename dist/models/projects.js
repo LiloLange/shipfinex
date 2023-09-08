@@ -85,9 +85,6 @@ const projectSchema = new Schema({
     startDate: {
         type: Date,
     },
-    endDate: {
-        type: Date,
-    },
     isSTOLaunched: {
         type: Boolean,
         default: false,
@@ -99,6 +96,9 @@ const projectSchema = new Schema({
     allowance: {
         type: Number,
         default: 0,
+    },
+    contract: {
+        type: String,
     },
 }, { timestamps: true });
 const Project = mongoose_1.default.model("project", projectSchema);

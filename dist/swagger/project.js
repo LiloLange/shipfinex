@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.tokenizationProjectSwagger = exports.getAllProjectSwagger = exports.uploadDocumentsSwagger = exports.createProjectSwagger = void 0;
+exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.allowProjectSwagger = exports.tokenizationProjectSwagger = exports.depositProjectSwagger = exports.claimProjectSwagger = exports.getAllProjectSwagger = exports.uploadDocumentsSwagger = exports.createProjectSwagger = void 0;
 exports.createProjectSwagger = {
     "hapi-swagger": {
         security: [{ jwt: [] }],
@@ -51,12 +51,60 @@ exports.getAllProjectSwagger = {
         },
     },
 };
+exports.claimProjectSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        responses: {
+            200: {
+                description: "Claim successfully",
+            },
+            400: {
+                description: "Request Param Error",
+            },
+            403: {
+                description: "Permission Error",
+            },
+        },
+    },
+};
+exports.depositProjectSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        responses: {
+            200: {
+                description: "Deposit successfully",
+            },
+            400: {
+                description: "Request Param Error",
+            },
+            403: {
+                description: "Permission Error",
+            },
+        },
+    },
+};
 exports.tokenizationProjectSwagger = {
     "hapi-swagger": {
         security: [{ jwt: [] }],
         responses: {
             200: {
-                description: "Get KYCs successfully",
+                description: "Tokenization successfully",
+            },
+            400: {
+                description: "Request Param Error",
+            },
+            401: {
+                description: "Unauthorized",
+            },
+        },
+    },
+};
+exports.allowProjectSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        responses: {
+            200: {
+                description: "Project Allowance Successfully",
             },
             400: {
                 description: "Request Param Error",

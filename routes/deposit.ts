@@ -6,7 +6,7 @@ import User from "../models/users";
 
 import { depositSchema, ipnSchema } from "../validation/deposit";
 import { createTransaction } from "../utils/coinpayment";
-import { mint } from "../utils/venly";
+import { mint } from "../utils/blockchain/musd";
 
 const options = { abortEarly: false, stripUnknown: true };
 const client = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -97,7 +97,7 @@ export let depositRoute = [
         if (traHistory.length !== 0) {
           if (request.payload["status"] == 100) {
             try {
-              await mint(user.wallet.address, query.amount, false);
+              await mint(user.wallet.address, query.amount);
               await traHistory[0].deleteOne();
             } catch (error) {
               console.log(error);
@@ -126,7 +126,7 @@ export let depositRoute = [
         const user = await User.findOne({ cus_id: cus_id });
         console.log(user.wallet.address, amount);
         try {
-          await mint(user.wallet.address, amount / 100, false);
+          await mint(user.wallet.address, amount / 100);
         } catch (error) {
           console.log(error);
         }

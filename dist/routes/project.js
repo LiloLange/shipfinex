@@ -13,15 +13,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.projectRoute = void 0;
-const solc_1 = __importDefault(require("solc"));
-const sol_merger_1 = require("sol-merger");
 const ethers_1 = require("ethers");
 const process_1 = __importDefault(require("process"));
 const fs_1 = __importDefault(require("fs"));
-const project_1 = require("../validation/project");
-const project_2 = require("../swagger/project");
-const projects_1 = __importDefault(require("../models/projects"));
+const project_1 = require("../utils/blockchain/project");
+const project_2 = require("../validation/project");
 const users_1 = __importDefault(require("../models/users"));
+const project_3 = require("../swagger/project");
+const projects_1 = __importDefault(require("../models/projects"));
+const manager_1 = require("../utils/blockchain/manager");
 const options = { abortEarly: false, stripUnknown: true };
 const path = process_1.default.cwd();
 const network = process_1.default.env.ETHEREUM_NETWORK;
@@ -40,7 +40,7 @@ exports.projectRoute = [
         config: {
             description: "Create Project",
             auth: "jwt",
-            plugins: project_2.createProjectSwagger,
+            plugins: project_3.createProjectSwagger,
             payload: {
                 maxBytes: 10485760000,
                 output: "stream",
@@ -50,7 +50,7 @@ exports.projectRoute = [
             },
             tags: ["api", "project"],
             validate: {
-                payload: project_1.projectCreateSchema,
+                payload: project_2.projectCreateSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {
@@ -95,7 +95,7 @@ exports.projectRoute = [
         config: {
             description: "Upload Project Document",
             auth: "jwt",
-            plugins: project_2.uploadDocumentsSwagger,
+            plugins: project_3.uploadDocumentsSwagger,
             payload: {
                 maxBytes: 10485760000,
                 output: "stream",
@@ -105,7 +105,7 @@ exports.projectRoute = [
             },
             tags: ["api", "project"],
             validate: {
-                payload: project_1.uploadDocumentSchema,
+                payload: project_2.uploadDocumentSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {
@@ -152,10 +152,10 @@ exports.projectRoute = [
         config: {
             description: "Get all project with filter",
             auth: "jwt",
-            plugins: project_2.getAllProjectSwagger,
+            plugins: project_3.getAllProjectSwagger,
             tags: ["api", "project"],
             validate: {
-                query: project_1.getProjectSchema,
+                query: project_2.getProjectSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {
@@ -168,13 +168,17 @@ exports.projectRoute = [
                 },
             },
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
                 let { tokenized, sto, page, status, allowance } = request.query;
                 let result;
                 const query = {};
-                if (tokenized) {
+                if (user.role === "prowner") {
+                    query["projectOwner"] = request.auth.credentials.userId;
+                }
+                if (tokenized !== undefined) {
                     query["tokenized"] = tokenized;
                 }
-                if (sto) {
+                if (sto !== undefined) {
                     query["isSTOLaunched"] = sto;
                 }
                 query["allowance"] = 0;
@@ -228,11 +232,11 @@ exports.projectRoute = [
         config: {
             description: "Tokenize the Project",
             auth: "jwt",
-            plugins: project_2.tokenizationProjectSwagger,
+            plugins: project_3.tokenizationProjectSwagger,
             tags: ["api", "project"],
             validate: {
-                payload: project_1.tokenizationProjectSchema,
-                params: project_1.deleteProjectSchema,
+                payload: project_2.tokenizationProjectSchema,
+                params: project_2.deleteProjectSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {
@@ -249,42 +253,11 @@ exports.projectRoute = [
                 if (project) {
                     try {
                         const updatedData = yield projects_1.default.updateOne({ _id: request.params.projectId }, { $set: { tokenization: request.payload } });
-                        const mergedCode = yield (0, sol_merger_1.merge)("./contracts/ShipToken.sol");
-                        const input = {
-                            language: "Solidity",
-                            sources: {
-                                "ShipToken.sol": {
-                                    content: mergedCode,
-                                },
-                            },
-                            settings: {
-                                outputSelection: {
-                                    "*": {
-                                        "*": ["*"],
-                                    },
-                                },
-                            },
-                        };
-                        const compiledContract = JSON.parse(solc_1.default.compile(JSON.stringify(input)));
-                        const bytecode = compiledContract.contracts["ShipToken.sol"]["ShipToken"].evm
-                            .bytecode.object;
-                        const abi = compiledContract.contracts["ShipToken.sol"]["ShipToken"].abi;
-                        try {
-                            const deployedContract = yield deploy(abi, bytecode, request.payload);
-                            console.log(deployedContract);
-                            return response
-                                .response({
-                                result: "success",
-                                address: deployedContract.target,
-                                sentTx: deployedContract["sentTx"],
-                            })
-                                .code(200);
-                        }
-                        catch (error) {
-                            console.log(error);
-                            return response.response(mergedCode).code(500);
-                        }
-                        return response.response({ msg: "Update successfully" });
+                        return response
+                            .response({
+                            result: "success",
+                        })
+                            .code(200);
                     }
                     catch (error) {
                         return response.response({ msg: "Updated Failed" }).code(404);
@@ -295,72 +268,16 @@ exports.projectRoute = [
         },
     },
     {
-        method: "GET",
-        path: "/{projectId}/allow",
+        method: "POST",
+        path: "/{projectId}/submit",
         config: {
             description: "Allow the Project",
             auth: "jwt",
-            plugins: project_2.tokenizationProjectSwagger,
-            tags: ["api", "project"],
-            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-                const project = yield projects_1.default.findById(request.params.projectId);
-                if (project) {
-                    try {
-                        const updatedData = yield projects_1.default.updateOne({ _id: request.params.projectId }, { $set: { tokenized: true, allowance: 1 } });
-                        const mergedCode = yield (0, sol_merger_1.merge)("./contracts/ShipToken.sol");
-                        const input = {
-                            language: "Solidity",
-                            sources: {
-                                "ShipToken.sol": {
-                                    content: mergedCode,
-                                },
-                            },
-                            settings: {
-                                outputSelection: {
-                                    "*": {
-                                        "*": ["*"],
-                                    },
-                                },
-                            },
-                        };
-                        const compiledContract = JSON.parse(solc_1.default.compile(JSON.stringify(input)));
-                        const bytecode = compiledContract.contracts["ShipToken.sol"]["ShipToken"].evm
-                            .bytecode.object;
-                        const abi = compiledContract.contracts["ShipToken.sol"]["ShipToken"].abi;
-                        try {
-                            const deployedContract = yield deploy(abi, bytecode, project.tokenization);
-                            console.log(deployedContract);
-                            return response
-                                .response({
-                                result: "success",
-                                address: deployedContract.target,
-                                sentTx: deployedContract["sentTx"],
-                            })
-                                .code(200);
-                        }
-                        catch (error) {
-                            console.log(error);
-                            return response.response(mergedCode).code(500);
-                        }
-                    }
-                    catch (error) {
-                        return response.response({ msg: "Updated Failed" }).code(404);
-                    }
-                }
-                return response.response({ msg: "Project not found" }).code(404);
-            }),
-        },
-    },
-    {
-        method: "GET",
-        path: "/{projectId}",
-        config: {
-            description: "Get single project with project ID",
-            auth: "jwt",
-            plugins: project_2.getSingleProjectSwagger,
+            plugins: project_3.allowProjectSwagger,
             tags: ["api", "project"],
             validate: {
-                params: project_1.deleteProjectSchema,
+                payload: project_2.allowanceProjectSchema,
+                params: project_2.deleteProjectSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {
@@ -375,9 +292,135 @@ exports.projectRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const project = yield projects_1.default.findById(request.params.projectId);
                 if (project) {
+                    try {
+                        try {
+                            const { tokenName, tokenSymbol, tonnage, offeringPercentage, assetValue, decimal, } = project.tokenization;
+                            const user = yield users_1.default.findById(project.projectOwner);
+                            const result = yield (0, manager_1.createNewProject)(String(project._id), tokenName, tokenSymbol, tonnage * 10 * offeringPercentage, decimal, assetValue / (tonnage * 1000), String(user.wallet.address));
+                            if (result.success === true) {
+                                const updatedData = yield projects_1.default.updateOne({ _id: request.params.projectId }, {
+                                    $set: {
+                                        tokenized: true,
+                                        allowance: request.payload["allowance"],
+                                        contract: result.contract,
+                                    },
+                                });
+                                return response.response(updatedData).code(200);
+                            }
+                            else
+                                return response
+                                    .response({
+                                    msg: "Failed to deploy cproject contract",
+                                })
+                                    .code(400);
+                        }
+                        catch (error) {
+                            console.log(error);
+                            return response
+                                .response({ msg: "Failed to deploy project contract" })
+                                .code(500);
+                        }
+                    }
+                    catch (error) {
+                        return response.response({ msg: "Updated Failed" }).code(404);
+                    }
+                }
+                return response.response({ msg: "Project not found" }).code(404);
+            }),
+        },
+    },
+    {
+        method: "GET",
+        path: "/{projectId}",
+        config: {
+            description: "Get single project with project ID",
+            auth: "jwt",
+            plugins: project_3.getSingleProjectSwagger,
+            tags: ["api", "project"],
+            validate: {
+                params: project_2.deleteProjectSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const project = yield projects_1.default.findById(request.params.projectId).populate({
+                    path: "projectOwner",
+                    select: "email firstName lastName phoneNumber",
+                });
+                if (project) {
                     return response.response(project);
                 }
                 return response.response({ msg: "Project not found" }).code(404);
+            }),
+        },
+    },
+    {
+        method: "POST",
+        path: "/deposit",
+        config: {
+            description: "Deposit on my project",
+            auth: "jwt",
+            plugins: project_3.depositProjectSwagger,
+            tags: ["api", "project"],
+            validate: {
+                payload: project_2.depositProjectSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
+                if (user.role === "prowner") {
+                    const result = yield (0, project_1.deposit)(request.payload["projectId"], user.wallet.id, request.payload["amount"]);
+                    return result;
+                }
+                return response.response({ msg: "No permission" }).code(403);
+            }),
+        },
+    },
+    {
+        method: "POST",
+        path: "/claim",
+        config: {
+            description: "claim on my project",
+            auth: "jwt",
+            plugins: project_3.claimProjectSwagger,
+            tags: ["api", "project"],
+            validate: {
+                payload: project_2.claimProjectSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
+                if (user.role === "investor") {
+                    const result = yield (0, project_1.claim)(request.payload["projectId"], user.wallet.id);
+                    return result;
+                }
+                return response.response({ msg: "No permission" }).code(403);
             }),
         },
     },
@@ -387,10 +430,10 @@ exports.projectRoute = [
         config: {
             description: "Get single project with project ID",
             auth: "jwt",
-            plugins: project_2.deleteProjectSwagger,
+            plugins: project_3.deleteProjectSwagger,
             tags: ["api", "project"],
             validate: {
-                params: project_1.deleteProjectSchema,
+                params: project_2.deleteProjectSchema,
                 options,
                 failAction: (request, h, error) => {
                     const details = error.details.map((d) => {

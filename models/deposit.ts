@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import devConfig from "../config";
 
 const Schema = mongoose.Schema;
 

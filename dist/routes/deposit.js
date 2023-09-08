@@ -18,7 +18,7 @@ const deposit_2 = __importDefault(require("../models/deposit"));
 const users_1 = __importDefault(require("../models/users"));
 const deposit_3 = require("../validation/deposit");
 const coinpayment_1 = require("../utils/coinpayment");
-const venly_1 = require("../utils/venly");
+const musd_1 = require("../utils/blockchain/musd");
 const options = { abortEarly: false, stripUnknown: true };
 const client = require("stripe")(process.env.STRIPE_SECRET_KEY);
 exports.depositRoute = [
@@ -100,7 +100,7 @@ exports.depositRoute = [
                 if (traHistory.length !== 0) {
                     if (request.payload["status"] == 100) {
                         try {
-                            yield (0, venly_1.mint)(user.wallet.address, query.amount, false);
+                            yield (0, musd_1.mint)(user.wallet.address, query.amount);
                             yield traHistory[0].deleteOne();
                         }
                         catch (error) {
@@ -128,7 +128,7 @@ exports.depositRoute = [
                 const user = yield users_1.default.findOne({ cus_id: cus_id });
                 console.log(user.wallet.address, amount);
                 try {
-                    yield (0, venly_1.mint)(user.wallet.address, amount / 100, false);
+                    yield (0, musd_1.mint)(user.wallet.address, amount / 100);
                 }
                 catch (error) {
                     console.log(error);

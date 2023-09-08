@@ -180,14 +180,13 @@ exports.kycRoute = [
         method: "GET",
         path: "/websdk",
         options: {
-            // auth: "jwt",
+            auth: "jwt",
             description: "Get an KYC by id",
-            // plugins: getSingleKYCSwagger,
+            plugins: kyc_1.getSingleKYCSwagger,
             tags: ["api", "kyc"],
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-                console.log("HERE");
                 try {
-                    const accessToken = yield (0, sumsub_1.getAccessToken)("64f6f3f648493e8818bc2095");
+                    const accessToken = yield (0, sumsub_1.getAccessToken)(request.auth.credentials.userId);
                     return response.response(accessToken);
                 }
                 catch (error) {

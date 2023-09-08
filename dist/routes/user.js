@@ -20,6 +20,7 @@ const venly_1 = require("../utils/venly");
 const users_1 = __importDefault(require("../models/users"));
 const config_1 = __importDefault(require("../config"));
 const user_1 = require("../validation/user");
+const investments_1 = require("../models/investments");
 const user_2 = require("../swagger/user");
 const stripepayment_1 = require("../utils/stripepayment");
 const otp_1 = __importDefault(require("../utils/otp"));
@@ -419,6 +420,18 @@ exports.userRoute = [
                         data: result,
                         offset: page * 25,
                     };
+                }
+                if (user.role === "prowner") {
+                    try {
+                        const data = yield (0, investments_1.findInvestmentsNumberByProjectOwner)(userId);
+                        return data;
+                    }
+                    catch (error) {
+                        console.log(error);
+                        return response
+                            .response({ msg: "Get investment data on prower side error" })
+                            .code(500);
+                    }
                 }
                 return response
                     .response({ msg: "You have no permission to access." })

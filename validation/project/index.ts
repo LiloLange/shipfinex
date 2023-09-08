@@ -42,3 +42,21 @@ export const tokenizationProjectSchema = Joi.object({
 export const deleteProjectSchema = Joi.object({
   projectId: Joi.string().required().description("Project Id required"),
 });
+
+export const depositProjectSchema = Joi.object({
+  projectId: Joi.string().required().description("Project Id required"),
+  amount: Joi.number().required().description("Deposit amount is required"),
+});
+
+export const investProjectSchema = Joi.object({
+  projectId: Joi.string().required().description("Project Id required"),
+  amount: Joi.number().required().description("Deposit amount is required"),
+});
+
+export const allowanceProjectSchema = Joi.object({
+  allowance: Joi.number().required().description("Allowance required"),
+});
+
+export const claimProjectSchema = Joi.object({
+  projectId: Joi.string().required().description("Project Id required"),
+});

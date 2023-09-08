@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.investmentRoute = void 0;
 const investments_1 = __importDefault(require("../models/investments"));
 const users_1 = __importDefault(require("../models/users"));
+const project_1 = require("../utils/blockchain/project");
 const investment_1 = require("../validation/investment");
 const investment_2 = require("../swagger/investment");
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -49,13 +50,20 @@ exports.investmentRoute = [
                     projectId: request.payload["projectId"],
                     amount: request.payload["amount"],
                 };
-                console.log(payload);
-                const newInvest = new investments_1.default(payload);
-                const result = yield newInvest.save();
-                return response.response({ msg: "Invest successfully" }).code(201);
+                const investResult = yield (0, project_1.invest)(payload.projectId, payload.userId, payload.amount);
+                if (investResult) {
+                    console.log(payload);
+                    const newInvest = new investments_1.default(payload);
+                    const result = yield newInvest.save();
+                    return response.response(result).code(201);
+                }
+                else {
+                    return response.response({ msg: "Invest failed." }).code(400);
+                }
             }
             catch (error) {
                 console.log(error);
+                return response.response({ msg: "Invest failed" }).code(500);
             }
         }),
     },

@@ -2,6 +2,7 @@ import { Request, ResponseToolkit } from "@hapi/hapi";
 import fs from "fs";
 import Investment from "../models/investments";
 import User from "../models/users";
+import { invest } from "../utils/blockchain/project";
 import config from "../config";
 
 import { investSchema, getInvestmentSchema } from "../validation/investment";
@@ -40,12 +41,23 @@ export let investmentRoute = [
           projectId: request.payload["projectId"],
           amount: request.payload["amount"],
         };
-        console.log(payload);
-        const newInvest = new Investment(payload);
-        const result = await newInvest.save();
-        return response.response({ msg: "Invest successfully" }).code(201);
+        const investResult = await invest(
+          payload.projectId,
+          payload.userId as string,
+          payload.amount
+        );
+
+        if (investResult) {
+          console.log(payload);
+          const newInvest = new Investment(payload);
+          const result = await newInvest.save();
+          return response.response(result).code(201);
+        } else {
+          return response.response({ msg: "Invest failed." }).code(400);
+        }
       } catch (error) {
         console.log(error);
+        return response.response({ msg: "Invest failed" }).code(500);
       }
     },
   },

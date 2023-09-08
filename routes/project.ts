@@ -1,17 +1,20 @@
 import { Request, ResponseToolkit } from "@hapi/hapi";
-import solc from "solc";
-import { merge } from "sol-merger";
 import { ethers, InfuraProvider } from "ethers";
 import process from "process";
 import fs from "fs";
 
+import { deposit, claim } from "../utils/blockchain/project";
 import {
   deleteProjectSchema,
   getProjectSchema,
   projectCreateSchema,
   tokenizationProjectSchema,
   uploadDocumentSchema,
+  depositProjectSchema,
+  claimProjectSchema,
+  allowanceProjectSchema,
 } from "../validation/project";
+import User from "../models/users";
 import {
   createProjectSwagger,
   deleteProjectSwagger,
@@ -19,9 +22,13 @@ import {
   getSingleProjectSwagger,
   tokenizationProjectSwagger,
   uploadDocumentsSwagger,
+  claimProjectSwagger,
+  depositProjectSwagger,
+  allowProjectSwagger,
 } from "../swagger/project";
 import Project from "../models/projects";
-import User from "../models/users";
+
+import { createNewProject } from "../utils/blockchain/manager";
 
 const options = { abortEarly: false, stripUnknown: true };
 const path = process.cwd();
@@ -183,13 +190,17 @@ export let projectRoute = [
         },
       },
       handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
         let { tokenized, sto, page, status, allowance } = request.query;
         let result;
         const query = {};
-        if (tokenized) {
+        if (user.role === "prowner") {
+          query["projectOwner"] = request.auth.credentials.userId;
+        }
+        if (tokenized !== undefined) {
           query["tokenized"] = tokenized;
         }
-        if (sto) {
+        if (sto !== undefined) {
           query["isSTOLaunched"] = sto;
         }
 
@@ -268,50 +279,11 @@ export let projectRoute = [
               { _id: request.params.projectId },
               { $set: { tokenization: request.payload } }
             );
-            const mergedCode = await merge("./contracts/ShipToken.sol");
-            const input = {
-              language: "Solidity",
-              sources: {
-                "ShipToken.sol": {
-                  content: mergedCode,
-                },
-              },
-              settings: {
-                outputSelection: {
-                  "*": {
-                    "*": ["*"],
-                  },
-                },
-              },
-            };
-            const compiledContract = JSON.parse(
-              solc.compile(JSON.stringify(input))
-            );
-            const bytecode =
-              compiledContract.contracts["ShipToken.sol"]["ShipToken"].evm
-                .bytecode.object;
-            const abi =
-              compiledContract.contracts["ShipToken.sol"]["ShipToken"].abi;
-            try {
-              const deployedContract = await deploy(
-                abi,
-                bytecode,
-                request.payload
-              );
-              console.log(deployedContract);
-              return response
-                .response({
-                  result: "success",
-                  address: deployedContract.target,
-                  sentTx: deployedContract["sentTx"],
-                })
-                .code(200);
-            } catch (error) {
-              console.log(error);
-              return response.response(mergedCode).code(500);
-            }
-
-            return response.response({ msg: "Update successfully" });
+            return response
+              .response({
+                result: "success",
+              })
+              .code(200);
           } catch (error) {
             return response.response({ msg: "Updated Failed" }).code(404);
           }
@@ -321,63 +293,73 @@ export let projectRoute = [
     },
   },
   {
-    method: "GET",
-    path: "/{projectId}/allow",
+    method: "POST",
+    path: "/{projectId}/submit",
     config: {
       description: "Allow the Project",
       auth: "jwt",
-      plugins: tokenizationProjectSwagger,
+      plugins: allowProjectSwagger,
       tags: ["api", "project"],
+      validate: {
+        payload: allowanceProjectSchema,
+        params: deleteProjectSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
       handler: async (request: Request, response: ResponseToolkit) => {
         const project = await Project.findById(request.params.projectId);
         if (project) {
           try {
-            const updatedData = await Project.updateOne(
-              { _id: request.params.projectId },
-              { $set: { tokenized: true, allowance: 1 } }
-            );
-
-            const mergedCode = await merge("./contracts/ShipToken.sol");
-            const input = {
-              language: "Solidity",
-              sources: {
-                "ShipToken.sol": {
-                  content: mergedCode,
-                },
-              },
-              settings: {
-                outputSelection: {
-                  "*": {
-                    "*": ["*"],
-                  },
-                },
-              },
-            };
-            const compiledContract = JSON.parse(
-              solc.compile(JSON.stringify(input))
-            );
-            const bytecode =
-              compiledContract.contracts["ShipToken.sol"]["ShipToken"].evm
-                .bytecode.object;
-            const abi =
-              compiledContract.contracts["ShipToken.sol"]["ShipToken"].abi;
             try {
-              const deployedContract = await deploy(
-                abi,
-                bytecode,
-                project.tokenization
+              const {
+                tokenName,
+                tokenSymbol,
+                tonnage,
+                offeringPercentage,
+                assetValue,
+                decimal,
+              } = project.tokenization;
+              const user = await User.findById(project.projectOwner);
+              const result = await createNewProject(
+                String(project._id),
+                tokenName,
+                tokenSymbol,
+                tonnage * 10 * offeringPercentage,
+                decimal,
+                assetValue / (tonnage * 1000),
+                String(user.wallet.address)
               );
-              console.log(deployedContract);
-              return response
-                .response({
-                  result: "success",
-                  address: deployedContract.target,
-                  sentTx: deployedContract["sentTx"],
-                })
-                .code(200);
+              if (result.success === true) {
+                const updatedData = await Project.updateOne(
+                  { _id: request.params.projectId },
+                  {
+                    $set: {
+                      tokenized: true,
+                      allowance: request.payload["allowance"],
+                      contract: result.contract,
+                    },
+                  }
+                );
+                return response.response(updatedData).code(200);
+              } else
+                return response
+                  .response({
+                    msg: "Failed to deploy cproject contract",
+                  })
+                  .code(400);
             } catch (error) {
               console.log(error);
-              return response.response(mergedCode).code(500);
+              return response
+                .response({ msg: "Failed to deploy project contract" })
+                .code(500);
             }
           } catch (error) {
             return response.response({ msg: "Updated Failed" }).code(404);
@@ -409,11 +391,89 @@ export let projectRoute = [
         },
       },
       handler: async (request: Request, response: ResponseToolkit) => {
-        const project = await Project.findById(request.params.projectId);
+        const project = await Project.findById(
+          request.params.projectId
+        ).populate({
+          path: "projectOwner",
+          select: "email firstName lastName phoneNumber",
+        });
         if (project) {
           return response.response(project);
         }
         return response.response({ msg: "Project not found" }).code(404);
+      },
+    },
+  },
+  {
+    method: "POST",
+    path: "/deposit",
+    config: {
+      description: "Deposit on my project",
+      auth: "jwt",
+      plugins: depositProjectSwagger,
+      tags: ["api", "project"],
+      validate: {
+        payload: depositProjectSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
+      handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
+
+        if (user.role === "prowner") {
+          const result = await deposit(
+            request.payload["projectId"],
+            user.wallet.id,
+            request.payload["amount"]
+          );
+          return result;
+        }
+
+        return response.response({ msg: "No permission" }).code(403);
+      },
+    },
+  },
+  {
+    method: "POST",
+    path: "/claim",
+    config: {
+      description: "claim on my project",
+      auth: "jwt",
+      plugins: claimProjectSwagger,
+      tags: ["api", "project"],
+      validate: {
+        payload: claimProjectSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
+      handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
+
+        if (user.role === "investor") {
+          const result = await claim(
+            request.payload["projectId"],
+            user.wallet.id
+          );
+          return result;
+        }
+
+        return response.response({ msg: "No permission" }).code(403);
       },
     },
   },

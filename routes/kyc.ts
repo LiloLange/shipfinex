@@ -9,20 +9,13 @@ import {
   getAccessToken,
 } from "../utils/sumsub";
 import {
-  createKYCSwagger,
   getAllKYCSwagger,
   getSingleKYCSwagger,
   deleteKYCSwagger,
   updateKYCSwagger,
 } from "../swagger/kyc";
-import {
-  getKYCSchema,
-  kycCreateSchema,
-  updateKYCSchema,
-} from "../validation/kyc";
-import getCurrentLoalTime from "../utils/getCurrentLoalTime";
+import { getKYCSchema, updateKYCSchema } from "../validation/kyc";
 import User from "../models/users";
-import { UpdateKYCPayload } from "../interfaces";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let kycRoute = [
@@ -182,14 +175,15 @@ export let kycRoute = [
     method: "GET",
     path: "/websdk",
     options: {
-      // auth: "jwt",
+      auth: "jwt",
       description: "Get an KYC by id",
-      // plugins: getSingleKYCSwagger,
+      plugins: getSingleKYCSwagger,
       tags: ["api", "kyc"],
       handler: async (request: Request, response: ResponseToolkit) => {
-        console.log("HERE");
         try {
-          const accessToken = await getAccessToken("64f6f3f648493e8818bc2095");
+          const accessToken = await getAccessToken(
+            request.auth.credentials.userId
+          );
           return response.response(accessToken);
         } catch (error) {
           console.log(error);

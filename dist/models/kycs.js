@@ -49,6 +49,10 @@ const kycSchema = new Schema({
             },
         },
     ],
+    status: {
+        type: Number,
+        default: 0,
+    },
 });
 const KYC = mongoose_1.default.model("kyc", kycSchema);
 exports.default = KYC;

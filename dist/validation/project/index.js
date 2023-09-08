@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProjectSchema = exports.tokenizationProjectSchema = exports.getProjectSchema = exports.uploadDocumentSchema = exports.projectCreateSchema = void 0;
+exports.claimProjectSchema = exports.allowanceProjectSchema = exports.investProjectSchema = exports.depositProjectSchema = exports.deleteProjectSchema = exports.tokenizationProjectSchema = exports.getProjectSchema = exports.uploadDocumentSchema = exports.projectCreateSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.projectCreateSchema = joi_1.default.object({
     projectName: joi_1.default.string().required(),
@@ -41,6 +41,20 @@ exports.tokenizationProjectSchema = joi_1.default.object({
     minimumInvestment: joi_1.default.number().required(),
 });
 exports.deleteProjectSchema = joi_1.default.object({
+    projectId: joi_1.default.string().required().description("Project Id required"),
+});
+exports.depositProjectSchema = joi_1.default.object({
+    projectId: joi_1.default.string().required().description("Project Id required"),
+    amount: joi_1.default.number().required().description("Deposit amount is required"),
+});
+exports.investProjectSchema = joi_1.default.object({
+    projectId: joi_1.default.string().required().description("Project Id required"),
+    amount: joi_1.default.number().required().description("Deposit amount is required"),
+});
+exports.allowanceProjectSchema = joi_1.default.object({
+    allowance: joi_1.default.number().required().description("Allowance required"),
+});
+exports.claimProjectSchema = joi_1.default.object({
     projectId: joi_1.default.string().required().description("Project Id required"),
 });
 //# sourceMappingURL=index.js.map
