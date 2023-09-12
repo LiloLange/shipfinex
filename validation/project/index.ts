@@ -43,6 +43,15 @@ export const deleteProjectSchema = Joi.object({
   projectId: Joi.string().required().description("Project Id required"),
 });
 
+export const withdrawProjectSchema = Joi.object({
+  projectId: Joi.string().required().description("Project Id required"),
+});
+
+export const withdrawSubmitProjectSchema = Joi.object({
+  projectId: Joi.string().required().description("Project Id required"),
+  status: Joi.boolean().required().description("Status"),
+});
+
 export const depositProjectSchema = Joi.object({
   projectId: Joi.string().required().description("Project Id required"),
   amount: Joi.number().required().description("Deposit amount is required"),

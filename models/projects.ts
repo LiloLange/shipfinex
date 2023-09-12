@@ -16,6 +16,26 @@ const projectSchema = new Schema(
       type: String,
       // required: true,
     },
+    documents: {
+      technicalReport: {
+        type: String,
+      },
+      financialReport: {
+        type: String,
+      },
+      commercialReport: {
+        type: String,
+      },
+      risk: {
+        type: String,
+      },
+      community: {
+        type: String,
+      },
+      vesselCertificate: {
+        type: String,
+      },
+    },
     description: {
       type: String,
       required: true,

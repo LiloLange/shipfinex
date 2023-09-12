@@ -1,14 +1,22 @@
 import { Request, ResponseToolkit } from "@hapi/hapi";
-import fs from "fs";
 import Investment from "../models/investments";
 import User from "../models/users";
-import { invest } from "../utils/blockchain/project";
-import config from "../config";
+import Project from "../models/projects";
+
+import {
+  getBalance,
+  getClaimableAmount,
+  getClaimedRewards,
+  getFundraising,
+  getGivenRewards,
+  getShipTokenPrice,
+  invest,
+} from "../utils/blockchain/project";
 
 import { investSchema, getInvestmentSchema } from "../validation/investment";
 
 import { investSwagger, getInvestmentSwagger } from "../swagger/investment";
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let investmentRoute = [
@@ -48,10 +56,19 @@ export let investmentRoute = [
         );
 
         if (investResult) {
-          console.log(payload);
-          const newInvest = new Investment(payload);
-          const result = await newInvest.save();
-          return response.response(result).code(201);
+          console.log("investment payload -->", payload);
+          const project = await Investment.findOne({
+            userId: payload.userId,
+            projectId: payload.projectId,
+          });
+          if (project) {
+            project.amount += payload.amount;
+            await project.save();
+          } else {
+            const newInvest = new Investment(payload);
+            await newInvest.save();
+          }
+          return response.response({ msg: "Invest success" }).code(201);
         } else {
           return response.response({ msg: "Invest failed." }).code(400);
         }
@@ -86,164 +103,82 @@ export let investmentRoute = [
       handler: async (request: Request, response: ResponseToolkit) => {
         const userId = request.auth.credentials.userId;
         const user = await User.findById(userId);
-        if (user.role === "admin") {
-          let { status, page } = request.query;
-          const query = {};
-          console.log(page);
-          if (status !== undefined) query["status"] = status;
-          if (!page) page = 1;
-          const total = await Investment.countDocuments(query);
-          const totalAmount: Array<Object> = await Investment.aggregate([
-            {
-              $group: {
-                _id: null,
-                totalAmount: { $sum: "$amount" },
-              },
-            },
-          ]);
-          const result = await Investment.find(query)
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * 10)
-            .limit(10);
-          let totalAmountNum = 0;
-          if (totalAmount.length > 0)
-            totalAmountNum = totalAmount[0]["totalAmount"];
-          return {
-            total,
-            totalAmount: totalAmountNum,
-            data: result,
-            offset: page * 10,
-          };
-        }
+        var totalAmount = 0;
+        var totalClaimed = 0;
+        var totalClaimable = 0;
+
         if (user.role === "investor") {
-          let { status, page } = request.query;
-          const query = { userId: request.auth.credentials.userId };
-          if (status !== undefined) query["status"] = status;
-          if (!page) page = 1;
-          const total = await Investment.countDocuments(query);
-          const objectId = new mongoose.Types.ObjectId(
-            request.auth.credentials.userId as string
-          );
-          const totalAmount: Array<Object> = await Investment.aggregate([
-            {
-              $match: {
-                userId: objectId,
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalAmount: { $sum: "$amount" },
-              },
-            },
-          ]);
-          const result = await Investment.find(query)
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * 25)
-            .limit(25);
-          let totalAmountNum = 0;
-          if (totalAmount.length > 0)
-            totalAmountNum = totalAmount[0]["totalAmount"];
+          const projectIds = await Project.find({});
+          const investorAddress = user.wallet.address;
+          const result: any[] = [];
+          for (let i = 0; i < projectIds.length; i++) {
+            const row = projectIds[i];
+
+            const amount = await getBalance(
+              row._id.toString(),
+              investorAddress
+            );
+
+            if (Number(amount) === 0) continue;
+            const price = await getShipTokenPrice(row._id.toString());
+
+            const claimed = await getClaimedRewards(
+              row._id.toString(),
+              investorAddress
+            );
+
+            const claimable = await getClaimableAmount(
+              row._id.toString(),
+              investorAddress
+            );
+
+            totalAmount += Number(amount) * Number(price);
+            totalClaimed += Number(claimed);
+            totalClaimable += Number(claimable);
+
+            result.push({
+              project: row,
+              amount,
+              price,
+              claimedRewards: claimed,
+              claimableRewards: claimable,
+            });
+          }
+
           return {
-            total,
-            totalAmount: totalAmountNum,
+            total: {
+              investment: totalAmount,
+              claimed: totalClaimed,
+              claimable: totalClaimable,
+            },
             data: result,
-            offset: page * 25,
           };
         }
         if (user.role === "prowner") {
-          let { status, page } = request.query;
-          if (!page) page = 1;
-          let pipeline = [];
-          const tdata = await Investment.aggregate([
-            {
-              $lookup: {
-                from: "projects",
-                localField: "projectId",
-                foreignField: "_id",
-                as: "project",
-              },
-            },
-            {
-              $unwind: "$project",
-            },
-          ]);
-          console.log(tdata);
-          const lookup = {
-            $lookup: {
-              from: "projects",
-              localField: "projectId",
-              foreignField: "_id",
-              as: "project",
-            },
-          };
-          const unwind = {
-            $unwind: "$project",
-          };
-          let match;
-          const objectId = new mongoose.Types.ObjectId(
-            request.auth.credentials.userId as string
-          );
-          console.log(objectId);
-          if (status) {
-            match = {
-              $match: {
-                "project.projectOwner": objectId,
-                status: status,
-              },
-            };
-          } else {
-            match = {
-              $match: {
-                "project.projectOwner": objectId,
-              },
-            };
-          }
-          const group1 = {
-            $group: {
-              _id: null,
-              count: { $sum: 1 },
-            },
-          };
-          const group2 = {
-            $group: {
-              _id: null,
-              totalAmount: { $sum: "$amount" },
-            },
-          };
-          const sort = {
-            $sort: {
-              createdAt: -1,
-            },
-          };
-          const skip = {
-            $skip: (page - 1) * 25,
-          };
-          const limit = {
-            $limit: 25,
-          };
-          pipeline.push(lookup, unwind, match, group1);
-          const total = await Investment.aggregate(pipeline);
-          console.log(total);
-          pipeline.splice(3, 1);
-          pipeline.push(group2);
-          const totalAmount = await Investment.aggregate(pipeline);
-          pipeline.splice(3, 1);
-          pipeline.push(sort, skip, limit);
-          console.log(pipeline);
-          const result = await Investment.aggregate(pipeline);
-          console.log(result);
+          const projectIds = await Project.find({ projectOwner: userId });
+          var totalFundraising = 0;
+          var totalRewards = 0;
+          const result: any[] = [];
 
-          let totalAmountNum = 0;
-          if (totalAmount.length > 0)
-            totalAmountNum = totalAmount[0]["totalAmount"];
-          let totalNum = 0;
-          if (total.length > 0) totalNum = total[0]["count"];
+          for (let i = 0; i < projectIds.length; i++) {
+            const project = projectIds[i];
+
+            const fundraising = await getFundraising(project._id.toString());
+            const givenRewards = await getGivenRewards(project._id.toString());
+
+            totalFundraising += Number(fundraising);
+            totalRewards += Number(givenRewards);
+
+            result.push({
+              project,
+              fundraising,
+              givenRewards,
+            });
+          }
+
           return {
-            total: totalNum,
-            totalAmount: totalAmountNum,
             data: result,
-            offset: page * 25,
+            total: { fundraising: totalFundraising, rewards: totalRewards },
           };
         }
         return response

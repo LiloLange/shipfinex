@@ -38,6 +38,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
     "ethers": "^6.7.1",
+    "filestack-js": "^3.27.0",
     "hapi-auth-jwt2": "^10.4.0",
     "hapi-swagger": "^17.1.0",
     "joi": "^17.9.2",
@@ -49,6 +50,7 @@
     "qs": "^6.11.2",
     "sol-merger": "^4.4.0",
     "solc": "^0.8.21",
+    "stream-to-file": "^2.0.1",
     "stripe": "^13.4.0",
     "web3": "^1.10.0"
   },

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.allowProjectSwagger = exports.tokenizationProjectSwagger = exports.depositProjectSwagger = exports.claimProjectSwagger = exports.getAllProjectSwagger = exports.uploadDocumentsSwagger = exports.createProjectSwagger = void 0;
+exports.deleteProjectSwagger = exports.updateProjectSwagger = exports.getSingleProjectSwagger = exports.allowProjectSwagger = exports.tokenizationProjectSwagger = exports.withdrawSubmitProjectSwagger = exports.withdrawProjectSwagger = exports.depositProjectSwagger = exports.claimProjectSwagger = exports.getAllProjectSwagger = exports.uploadDocumentsSwagger = exports.createProjectSwagger = void 0;
 exports.createProjectSwagger = {
     "hapi-swagger": {
         security: [{ jwt: [] }],
@@ -76,6 +76,44 @@ exports.depositProjectSwagger = {
             },
             400: {
                 description: "Request Param Error",
+            },
+            403: {
+                description: "Permission Error",
+            },
+        },
+    },
+};
+exports.withdrawProjectSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        responses: {
+            200: {
+                description: "Withdraw Saved successfully",
+            },
+            400: {
+                description: "Request Param Error",
+            },
+            401: {
+                description: "Unauthorized",
+            },
+            403: {
+                description: "Permission Error",
+            },
+        },
+    },
+};
+exports.withdrawSubmitProjectSwagger = {
+    "hapi-swagger": {
+        security: [{ jwt: [] }],
+        responses: {
+            200: {
+                description: "Withdraw successfully",
+            },
+            400: {
+                description: "Request Param Error",
+            },
+            401: {
+                description: "Unauthorized",
             },
             403: {
                 description: "Permission Error",

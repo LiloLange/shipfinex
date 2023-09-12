@@ -12,30 +12,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const nodemailer_1 = __importDefault(require("nodemailer"));
-const sendMail = (to, content) => __awaiter(void 0, void 0, void 0, function* () {
-    const transporter = nodemailer_1.default.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-            user: "shipfinexsup@gmail.com",
-            pass: "hrgfmsgautufoxfh",
-        },
-    });
-    // Use the transporter to send emails
+exports.getTransaction = void 0;
+const axios_1 = __importDefault(require("axios"));
+const ETHERSCAN_API_URL = "https://api-goerli.etherscan.io";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
+let config = {};
+const getTransaction = (address, page) => __awaiter(void 0, void 0, void 0, function* () {
+    config.baseURL = ETHERSCAN_API_URL;
+    const url = `/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=25&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+    const headers = {
+        Accept: "application/json",
+    };
+    config.method = "GET";
+    config.url = url;
+    config.headers = headers;
     try {
-        const res = yield transporter.sendMail({
-            from: "shipfinexsup@gmail.com",
-            to,
-            subject: "Hello",
-            html: content,
-        });
-        console.log(res);
+        const response = yield (0, axios_1.default)(config);
+        return response.data.result;
     }
     catch (error) {
         console.log(error);
     }
 });
-exports.default = sendMail;
-//# sourceMappingURL=sendMail.js.map
+exports.getTransaction = getTransaction;
+//# sourceMappingURL=etherscan.js.map

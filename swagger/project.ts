@@ -85,6 +85,46 @@ export const depositProjectSwagger = {
   },
 };
 
+export const withdrawProjectSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    responses: {
+      200: {
+        description: "Withdraw Saved successfully",
+      },
+      400: {
+        description: "Request Param Error",
+      },
+      401: {
+        description: "Unauthorized",
+      },
+      403: {
+        description: "Permission Error",
+      },
+    },
+  },
+};
+
+export const withdrawSubmitProjectSwagger = {
+  "hapi-swagger": {
+    security: [{ jwt: [] }],
+    responses: {
+      200: {
+        description: "Withdraw successfully",
+      },
+      400: {
+        description: "Request Param Error",
+      },
+      401: {
+        description: "Unauthorized",
+      },
+      403: {
+        description: "Permission Error",
+      },
+    },
+  },
+};
+
 export const tokenizationProjectSwagger = {
   "hapi-swagger": {
     security: [{ jwt: [] }],

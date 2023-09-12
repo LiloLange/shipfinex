@@ -22,6 +22,7 @@ const users_1 = __importDefault(require("../models/users"));
 const project_3 = require("../swagger/project");
 const projects_1 = __importDefault(require("../models/projects"));
 const manager_1 = require("../utils/blockchain/manager");
+const withdraw_1 = __importDefault(require("../models/withdraw"));
 const options = { abortEarly: false, stripUnknown: true };
 const path = process_1.default.cwd();
 const network = process_1.default.env.ETHEREUM_NETWORK;
@@ -94,7 +95,7 @@ exports.projectRoute = [
         path: "/{id}/documents",
         config: {
             description: "Upload Project Document",
-            auth: "jwt",
+            // auth: "jwt",
             plugins: project_3.uploadDocumentsSwagger,
             payload: {
                 maxBytes: 10485760000,
@@ -132,12 +133,17 @@ exports.projectRoute = [
                 try {
                     if (!fs_1.default.existsSync(filePath))
                         fs_1.default.mkdirSync(filePath);
+                    const project = yield projects_1.default.findById(request.params.id);
                     fileNames.map((fileName) => {
                         const extension = payload[fileName].hapi.filename.split(".");
-                        const path = filePath + `/${fileName}.${extension[extension.length - 1]}`;
-                        const projectPipe = fs_1.default.createWriteStream(path);
+                        const savedPath = filePath + `/${fileName}.${extension[extension.length - 1]}`;
+                        const projectPipe = fs_1.default.createWriteStream(savedPath);
                         payload[fileName].pipe(projectPipe);
+                        const newPath = savedPath.replace(path, "");
+                        console.log("documentation -->", newPath);
+                        project.documents[fileName] = newPath;
                     });
+                    yield project.save();
                     return response.response("successfully uploaded");
                 }
                 catch (error) {
@@ -170,10 +176,12 @@ exports.projectRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const user = yield users_1.default.findById(request.auth.credentials.userId);
                 let { tokenized, sto, page, status, allowance } = request.query;
-                let result;
                 const query = {};
                 if (user.role === "prowner") {
                     query["projectOwner"] = request.auth.credentials.userId;
+                }
+                if (user.role === "investor") {
+                    query["allowance"] = 1;
                 }
                 if (tokenized !== undefined) {
                     query["tokenized"] = tokenized;
@@ -196,7 +204,7 @@ exports.projectRoute = [
                 if (status !== undefined) {
                     query["status"] = status;
                 }
-                if (allowance != undefined) {
+                if (allowance !== undefined) {
                     query["allowance"] = allowance;
                 }
                 if (page) {
@@ -206,13 +214,34 @@ exports.projectRoute = [
                     page = 1;
                 const total = yield projects_1.default.countDocuments(query);
                 console.log(total);
-                result = yield projects_1.default.find(query)
+                let result = yield projects_1.default.find(query)
                     .populate({
                     path: "projectOwner",
                     select: "email firstName lastName",
                 })
                     .skip((page - 1) * 25)
                     .limit(25);
+                let index = 0;
+                const finalResult = [];
+                for (; index < result.length; index++) {
+                    const row = result[index];
+                    if (row.allowance === 1) {
+                        const withdrawalRequest = yield withdraw_1.default.findOne({
+                            projectId: row._id,
+                        });
+                        const givenRewards = yield (0, project_1.getGivenRewards)(row._id.toString());
+                        const investments = yield (0, project_1.getFundraising)(row._id.toString());
+                        const withdrawals = yield (0, project_1.getWithdrawal)(row._id.toString());
+                        finalResult.push(Object.assign(Object.assign({}, row), { withdrawalRequest: withdrawalRequest
+                                ? withdrawalRequest.allowance
+                                : "undefined", givenRewards,
+                            investments,
+                            withdrawals }));
+                    }
+                    else {
+                        finalResult.push(row);
+                    }
+                }
                 return {
                     total,
                     pendingCount,
@@ -220,7 +249,7 @@ exports.projectRoute = [
                     rejectCount,
                     activeCount,
                     inactiveCount,
-                    data: result,
+                    data: finalResult,
                     offset: page * 25,
                 };
             }),
@@ -355,8 +384,18 @@ exports.projectRoute = [
                     path: "projectOwner",
                     select: "email firstName lastName phoneNumber",
                 });
+                const withdrawalRequest = yield withdraw_1.default.findOne({
+                    projectId: project._id,
+                });
+                const givenRewards = yield (0, project_1.getGivenRewards)(project._id.toString());
+                const investments = yield (0, project_1.getFundraising)(project._id.toString());
+                const withdrawals = yield (0, project_1.getWithdrawal)(project._id.toString());
                 if (project) {
-                    return response.response(project);
+                    return response.response(Object.assign(Object.assign({}, project), { withdrawalRequest: withdrawalRequest
+                            ? withdrawalRequest.allowance
+                            : "undefined", givenRewards,
+                        investments,
+                        withdrawals }));
                 }
                 return response.response({ msg: "Project not found" }).code(404);
             }),
@@ -387,7 +426,110 @@ exports.projectRoute = [
                 const user = yield users_1.default.findById(request.auth.credentials.userId);
                 if (user.role === "prowner") {
                     const result = yield (0, project_1.deposit)(request.payload["projectId"], user.wallet.id, request.payload["amount"]);
-                    return result;
+                    if (result === true)
+                        return response.response({ msg: "Deposit Success" });
+                    return response.response({ msg: "Deposit failed" }).code(400);
+                }
+                return response.response({ msg: "No permission" }).code(403);
+            }),
+        },
+    },
+    {
+        method: "POST",
+        path: "/withdraw",
+        config: {
+            description: "Withdraw on my project",
+            auth: "jwt",
+            plugins: project_3.withdrawProjectSwagger,
+            tags: ["api", "project"],
+            validate: {
+                payload: project_2.withdrawProjectSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
+                if (user.role === "prowner") {
+                    const project = yield projects_1.default.findOne({
+                        _id: request.payload["projectId"],
+                        projectOwner: user._id,
+                    });
+                    if (project) {
+                        const withdrawData = yield withdraw_1.default.findOne({
+                            projectId: request.payload["projectId"],
+                        });
+                        if (withdrawData) {
+                            withdrawData.allowance = false;
+                            yield withdrawData.save();
+                        }
+                        else {
+                            const newWithDraw = new withdraw_1.default(request.payload);
+                            yield newWithDraw.save();
+                        }
+                        return response.response({ msg: "Withdraw saved" }).code(200);
+                    }
+                    return response
+                        .response({ msg: "This project is not yours" })
+                        .code(403);
+                }
+                return response.response({ msg: "No permission" }).code(403);
+            }),
+        },
+    },
+    {
+        method: "POST",
+        path: "/withdraw/submit",
+        config: {
+            description: "Withdraw on my project",
+            auth: "jwt",
+            plugins: project_3.withdrawSubmitProjectSwagger,
+            tags: ["api", "project"],
+            validate: {
+                payload: project_2.withdrawSubmitProjectSchema,
+                options,
+                failAction: (request, h, error) => {
+                    const details = error.details.map((d) => {
+                        return {
+                            message: d.message,
+                            path: d.path,
+                        };
+                    });
+                    return h.response(details).code(400).takeover();
+                },
+            },
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
+                const status = request.payload["status"];
+                if (user.role === "admin") {
+                    const withdrawData = yield withdraw_1.default.findOne({
+                        projectId: request.payload["projectId"],
+                    });
+                    if (withdrawData && withdrawData.allowance === false) {
+                        if (status === true) {
+                            const result = yield (0, project_1.withdraw)(withdrawData.projectId.toString());
+                            if (result === true) {
+                                yield withdrawData.deleteOne();
+                                return response.response({ msg: "Withdraw success" });
+                            }
+                            else {
+                                return response.response({ msg: "Failed" }).code(500);
+                            }
+                        }
+                        else {
+                            withdrawData.allowance = true;
+                            yield withdrawData.save();
+                            return response.response({ msg: "Withdraw failed" });
+                        }
+                    }
+                    return response.response({ msg: "Withdraw not found" }).code(404);
                 }
                 return response.response({ msg: "No permission" }).code(403);
             }),
@@ -418,7 +560,10 @@ exports.projectRoute = [
                 const user = yield users_1.default.findById(request.auth.credentials.userId);
                 if (user.role === "investor") {
                     const result = yield (0, project_1.claim)(request.payload["projectId"], user.wallet.id);
-                    return result;
+                    if (result === true) {
+                        return response.response({ msg: "Claimed successfully" });
+                    }
+                    return response.response({ msg: "Claimed failed" }).code(400);
                 }
                 return response.response({ msg: "No permission" }).code(403);
             }),

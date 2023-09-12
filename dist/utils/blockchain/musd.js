@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getBalance = exports.burn = exports.mint = void 0;
 const web3_1 = __importDefault(require("web3"));
 const hdwallet_provider_1 = __importDefault(require("@truffle/hdwallet-provider"));
-const MUSD_json_1 = __importDefault(require("./MUSD.json"));
+const AbiMUSD_json_1 = __importDefault(require("./AbiMUSD.json"));
 const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
 const MUSD_CONTRACT_ADDRESS = process.env.MUSD_CONTRACT_ADDRESS;
 const localKeyProvider = new hdwallet_provider_1.default({
@@ -26,7 +26,7 @@ const mint = (to, amount) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const web3 = new web3_1.default(localKeyProvider);
         const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-        const musdContract = new web3.eth.Contract(MUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
+        const musdContract = new web3.eth.Contract(AbiMUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
         yield musdContract.methods
             .mint(to, web3.utils.toWei(web3.utils.toBN(amount), "ether").toString())
             .send({ from: adminAccount.address });
@@ -40,7 +40,7 @@ const burn = (from, amount, type) => __awaiter(void 0, void 0, void 0, function*
     try {
         const web3 = new web3_1.default(localKeyProvider);
         const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-        const musdContract = new web3.eth.Contract(MUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
+        const musdContract = new web3.eth.Contract(AbiMUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
         yield musdContract.methods
             .burn(from, web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(), type)
             .send({ from: adminAccount.address })
@@ -57,7 +57,7 @@ const getBalance = (address) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const web3 = new web3_1.default(localKeyProvider);
         const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-        const musdContract = new web3.eth.Contract(MUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
+        const musdContract = new web3.eth.Contract(AbiMUSD_json_1.default, MUSD_CONTRACT_ADDRESS);
         const totalBalance = yield musdContract.methods
             .balanceOf(address)
             .call({ from: adminAccount.address });

@@ -1,6 +1,6 @@
 import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
-import MUSD_ABI from "./MUSD.json";
+import MUSD_ABI from "./AbiMUSD.json";
 
 const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
 const MUSD_CONTRACT_ADDRESS = process.env.MUSD_CONTRACT_ADDRESS;

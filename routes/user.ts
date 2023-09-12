@@ -65,6 +65,7 @@ export let userRoute = [
             .response([{ message: "User already exists", path: ["email"] }])
             .code(409);
         }
+        console.log("user register request -->", request.payload);
         const wallet = await createWallet();
         console.log(wallet);
         const newUser: any = new User(request.payload);
@@ -204,6 +205,7 @@ export let userRoute = [
             expiresIn: "3m",
           }
         );
+        console.log("verify otp request-->", request.payload);
         // sendMail(user.email, token);
         const baseUrl = `${request.server.info.protocol}://${request.info.host}`;
         const content = `<div style="background-color: #f2f2f2; padding: 20px; border-radius: 10px;"><h1 style="font-size: 36px; color: #333; margin-bottom: 20px;">Hello</h1><p style="font-size: 18px; color: #666; margin-bottom: 20px;">Welcome To ShipFinex Homepage</p><p style="font-size: 18px; color: #666; margin-bottom: 40px;">This is your email verification link. Please click the button below to verify your email:</p><a href="${baseUrl}/api/v1/user/verify-email/${token}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 18px;">Verify Email</a></div>`;
@@ -458,15 +460,15 @@ export let userRoute = [
           };
         }
         if (user.role === "prowner") {
-          try {
-            const data = await findInvestmentsNumberByProjectOwner(userId);
-            return data;
-          } catch (error) {
-            console.log(error);
-            return response
-              .response({ msg: "Get investment data on prower side error" })
-              .code(500);
-          }
+          // try {
+          //   const data = await findInvestmentsNumberByProjectOwner(userId);
+          //   return data;
+          // } catch (error) {
+          //   console.log(error);
+          //   return response
+          //     .response({ msg: "Get investment data on prower side error" })
+          //     .code(500);
+          // }
         }
         return response
           .response({ msg: "You have no permission to access." })

@@ -3,7 +3,14 @@ import { ethers, InfuraProvider } from "ethers";
 import process from "process";
 import fs from "fs";
 
-import { deposit, claim } from "../utils/blockchain/project";
+import {
+  deposit,
+  claim,
+  withdraw,
+  getGivenRewards,
+  getWithdrawal,
+  getFundraising,
+} from "../utils/blockchain/project";
 import {
   deleteProjectSchema,
   getProjectSchema,
@@ -13,6 +20,8 @@ import {
   depositProjectSchema,
   claimProjectSchema,
   allowanceProjectSchema,
+  withdrawProjectSchema,
+  withdrawSubmitProjectSchema,
 } from "../validation/project";
 import User from "../models/users";
 import {
@@ -25,10 +34,13 @@ import {
   claimProjectSwagger,
   depositProjectSwagger,
   allowProjectSwagger,
+  withdrawProjectSwagger,
+  withdrawSubmitProjectSwagger,
 } from "../swagger/project";
 import Project from "../models/projects";
 
 import { createNewProject } from "../utils/blockchain/manager";
+import WithDraw from "../models/withdraw";
 
 const options = { abortEarly: false, stripUnknown: true };
 const path = process.cwd();
@@ -115,7 +127,7 @@ export let projectRoute = [
     path: "/{id}/documents",
     config: {
       description: "Upload Project Document",
-      auth: "jwt",
+      // auth: "jwt",
       plugins: uploadDocumentsSwagger,
       payload: {
         maxBytes: 10485760000,
@@ -152,15 +164,20 @@ export let projectRoute = [
         // console.log(databaseFilePath);
         try {
           if (!fs.existsSync(filePath)) fs.mkdirSync(filePath);
-
+          const project = await Project.findById(request.params.id);
           fileNames.map((fileName) => {
             const extension: Array<string> =
               payload[fileName].hapi.filename.split(".");
-            const path =
+            const savedPath =
               filePath + `/${fileName}.${extension[extension.length - 1]}`;
-            const projectPipe = fs.createWriteStream(path);
+            const projectPipe = fs.createWriteStream(savedPath);
+
             payload[fileName].pipe(projectPipe);
+            const newPath = savedPath.replace(path, "");
+            console.log("documentation -->", newPath);
+            project.documents[fileName] = newPath;
           });
+          await project.save();
           return response.response("successfully uploaded");
         } catch (error) {
           console.log(error);
@@ -192,10 +209,12 @@ export let projectRoute = [
       handler: async (request: Request, response: ResponseToolkit) => {
         const user = await User.findById(request.auth.credentials.userId);
         let { tokenized, sto, page, status, allowance } = request.query;
-        let result;
         const query = {};
         if (user.role === "prowner") {
           query["projectOwner"] = request.auth.credentials.userId;
+        }
+        if (user.role === "investor") {
+          query["allowance"] = 1;
         }
         if (tokenized !== undefined) {
           query["tokenized"] = tokenized;
@@ -221,7 +240,7 @@ export let projectRoute = [
         if (status !== undefined) {
           query["status"] = status;
         }
-        if (allowance != undefined) {
+        if (allowance !== undefined) {
           query["allowance"] = allowance;
         }
         if (page) {
@@ -229,13 +248,39 @@ export let projectRoute = [
         } else page = 1;
         const total = await Project.countDocuments(query);
         console.log(total);
-        result = await Project.find(query)
+        let result = await Project.find(query)
           .populate({
             path: "projectOwner",
             select: "email firstName lastName",
           })
           .skip((page - 1) * 25)
           .limit(25);
+
+        let index = 0;
+        const finalResult: any[] = [];
+        for (; index < result.length; index++) {
+          const row = result[index];
+          if (row.allowance === 1) {
+            const withdrawalRequest = await WithDraw.findOne({
+              projectId: row._id,
+            });
+            const givenRewards = await getGivenRewards(row._id.toString());
+            const investments = await getFundraising(row._id.toString());
+            const withdrawals = await getWithdrawal(row._id.toString());
+            finalResult.push({
+              ...row,
+              withdrawalRequest: withdrawalRequest
+                ? withdrawalRequest.allowance
+                : "undefined",
+              givenRewards,
+              investments,
+              withdrawals,
+            });
+          } else {
+            finalResult.push(row);
+          }
+        }
+
         return {
           total,
           pendingCount,
@@ -243,7 +288,7 @@ export let projectRoute = [
           rejectCount,
           activeCount,
           inactiveCount,
-          data: result,
+          data: finalResult,
           offset: page * 25,
         };
       },
@@ -397,8 +442,24 @@ export let projectRoute = [
           path: "projectOwner",
           select: "email firstName lastName phoneNumber",
         });
+
+        const withdrawalRequest = await WithDraw.findOne({
+          projectId: project._id,
+        });
+        const givenRewards = await getGivenRewards(project._id.toString());
+        const investments = await getFundraising(project._id.toString());
+        const withdrawals = await getWithdrawal(project._id.toString());
+
         if (project) {
-          return response.response(project);
+          return response.response({
+            ...project,
+            withdrawalRequest: withdrawalRequest
+              ? withdrawalRequest.allowance
+              : "undefined",
+            givenRewards,
+            investments,
+            withdrawals,
+          });
         }
         return response.response({ msg: "Project not found" }).code(404);
       },
@@ -434,7 +495,113 @@ export let projectRoute = [
             user.wallet.id,
             request.payload["amount"]
           );
-          return result;
+          if (result === true)
+            return response.response({ msg: "Deposit Success" });
+          return response.response({ msg: "Deposit failed" }).code(400);
+        }
+
+        return response.response({ msg: "No permission" }).code(403);
+      },
+    },
+  },
+  {
+    method: "POST",
+    path: "/withdraw",
+    config: {
+      description: "Withdraw on my project",
+      auth: "jwt",
+      plugins: withdrawProjectSwagger,
+      tags: ["api", "project"],
+      validate: {
+        payload: withdrawProjectSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
+      handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
+
+        if (user.role === "prowner") {
+          const project = await Project.findOne({
+            _id: request.payload["projectId"],
+            projectOwner: user._id,
+          });
+          if (project) {
+            const withdrawData = await WithDraw.findOne({
+              projectId: request.payload["projectId"],
+            });
+
+            if (withdrawData) {
+              withdrawData.allowance = false;
+              await withdrawData.save();
+            } else {
+              const newWithDraw = new WithDraw(request.payload);
+
+              await newWithDraw.save();
+            }
+            return response.response({ msg: "Withdraw saved" }).code(200);
+          }
+          return response
+            .response({ msg: "This project is not yours" })
+            .code(403);
+        }
+
+        return response.response({ msg: "No permission" }).code(403);
+      },
+    },
+  },
+  {
+    method: "POST",
+    path: "/withdraw/submit",
+    config: {
+      description: "Withdraw on my project",
+      auth: "jwt",
+      plugins: withdrawSubmitProjectSwagger,
+      tags: ["api", "project"],
+      validate: {
+        payload: withdrawSubmitProjectSchema,
+        options,
+        failAction: (request, h, error) => {
+          const details = error.details.map((d) => {
+            return {
+              message: d.message,
+              path: d.path,
+            };
+          });
+          return h.response(details).code(400).takeover();
+        },
+      },
+      handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
+        const status = request.payload["status"];
+
+        if (user.role === "admin") {
+          const withdrawData = await WithDraw.findOne({
+            projectId: request.payload["projectId"],
+          });
+          if (withdrawData && withdrawData.allowance === false) {
+            if (status === true) {
+              const result = await withdraw(withdrawData.projectId.toString());
+              if (result === true) {
+                await withdrawData.deleteOne();
+                return response.response({ msg: "Withdraw success" });
+              } else {
+                return response.response({ msg: "Failed" }).code(500);
+              }
+            } else {
+              withdrawData.allowance = true;
+              await withdrawData.save();
+              return response.response({ msg: "Withdraw failed" });
+            }
+          }
+          return response.response({ msg: "Withdraw not found" }).code(404);
         }
 
         return response.response({ msg: "No permission" }).code(403);
@@ -470,7 +637,10 @@ export let projectRoute = [
             request.payload["projectId"],
             user.wallet.id
           );
-          return result;
+          if (result === true) {
+            return response.response({ msg: "Claimed successfully" });
+          }
+          return response.response({ msg: "Claimed failed" }).code(400);
         }
 
         return response.response({ msg: "No permission" }).code(403);

@@ -15,10 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.investmentRoute = void 0;
 const investments_1 = __importDefault(require("../models/investments"));
 const users_1 = __importDefault(require("../models/users"));
+const projects_1 = __importDefault(require("../models/projects"));
 const project_1 = require("../utils/blockchain/project");
 const investment_1 = require("../validation/investment");
 const investment_2 = require("../swagger/investment");
-const mongoose_1 = __importDefault(require("mongoose"));
 const options = { abortEarly: false, stripUnknown: true };
 exports.investmentRoute = [
     {
@@ -52,10 +52,20 @@ exports.investmentRoute = [
                 };
                 const investResult = yield (0, project_1.invest)(payload.projectId, payload.userId, payload.amount);
                 if (investResult) {
-                    console.log(payload);
-                    const newInvest = new investments_1.default(payload);
-                    const result = yield newInvest.save();
-                    return response.response(result).code(201);
+                    console.log("investment payload -->", payload);
+                    const project = yield investments_1.default.findOne({
+                        userId: payload.userId,
+                        projectId: payload.projectId,
+                    });
+                    if (project) {
+                        project.amount += payload.amount;
+                        yield project.save();
+                    }
+                    else {
+                        const newInvest = new investments_1.default(payload);
+                        yield newInvest.save();
+                    }
+                    return response.response({ msg: "Invest success" }).code(201);
                 }
                 else {
                     return response.response({ msg: "Invest failed." }).code(400);
@@ -91,166 +101,61 @@ exports.investmentRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const userId = request.auth.credentials.userId;
                 const user = yield users_1.default.findById(userId);
-                if (user.role === "admin") {
-                    let { status, page } = request.query;
-                    const query = {};
-                    console.log(page);
-                    if (status !== undefined)
-                        query["status"] = status;
-                    if (!page)
-                        page = 1;
-                    const total = yield investments_1.default.countDocuments(query);
-                    const totalAmount = yield investments_1.default.aggregate([
-                        {
-                            $group: {
-                                _id: null,
-                                totalAmount: { $sum: "$amount" },
-                            },
-                        },
-                    ]);
-                    const result = yield investments_1.default.find(query)
-                        .sort({ createdAt: -1 })
-                        .skip((page - 1) * 10)
-                        .limit(10);
-                    let totalAmountNum = 0;
-                    if (totalAmount.length > 0)
-                        totalAmountNum = totalAmount[0]["totalAmount"];
-                    return {
-                        total,
-                        totalAmount: totalAmountNum,
-                        data: result,
-                        offset: page * 10,
-                    };
-                }
+                var totalAmount = 0;
+                var totalClaimed = 0;
+                var totalClaimable = 0;
                 if (user.role === "investor") {
-                    let { status, page } = request.query;
-                    const query = { userId: request.auth.credentials.userId };
-                    if (status !== undefined)
-                        query["status"] = status;
-                    if (!page)
-                        page = 1;
-                    const total = yield investments_1.default.countDocuments(query);
-                    const objectId = new mongoose_1.default.Types.ObjectId(request.auth.credentials.userId);
-                    const totalAmount = yield investments_1.default.aggregate([
-                        {
-                            $match: {
-                                userId: objectId,
-                            },
-                        },
-                        {
-                            $group: {
-                                _id: null,
-                                totalAmount: { $sum: "$amount" },
-                            },
-                        },
-                    ]);
-                    const result = yield investments_1.default.find(query)
-                        .sort({ createdAt: -1 })
-                        .skip((page - 1) * 25)
-                        .limit(25);
-                    let totalAmountNum = 0;
-                    if (totalAmount.length > 0)
-                        totalAmountNum = totalAmount[0]["totalAmount"];
+                    const projectIds = yield projects_1.default.find({});
+                    const investorAddress = user.wallet.address;
+                    const result = [];
+                    for (let i = 0; i < projectIds.length; i++) {
+                        const row = projectIds[i];
+                        const amount = yield (0, project_1.getBalance)(row._id.toString(), investorAddress);
+                        if (Number(amount) === 0)
+                            continue;
+                        const price = yield (0, project_1.getShipTokenPrice)(row._id.toString());
+                        const claimed = yield (0, project_1.getClaimedRewards)(row._id.toString(), investorAddress);
+                        const claimable = yield (0, project_1.getClaimableAmount)(row._id.toString(), investorAddress);
+                        totalAmount += Number(amount) * Number(price);
+                        totalClaimed += Number(claimed);
+                        totalClaimable += Number(claimable);
+                        result.push({
+                            project: row,
+                            amount,
+                            price,
+                            claimedRewards: claimed,
+                            claimableRewards: claimable,
+                        });
+                    }
                     return {
-                        total,
-                        totalAmount: totalAmountNum,
+                        total: {
+                            investment: totalAmount,
+                            claimed: totalClaimed,
+                            claimable: totalClaimable,
+                        },
                         data: result,
-                        offset: page * 25,
                     };
                 }
                 if (user.role === "prowner") {
-                    let { status, page } = request.query;
-                    if (!page)
-                        page = 1;
-                    let pipeline = [];
-                    const tdata = yield investments_1.default.aggregate([
-                        {
-                            $lookup: {
-                                from: "projects",
-                                localField: "projectId",
-                                foreignField: "_id",
-                                as: "project",
-                            },
-                        },
-                        {
-                            $unwind: "$project",
-                        },
-                    ]);
-                    console.log(tdata);
-                    const lookup = {
-                        $lookup: {
-                            from: "projects",
-                            localField: "projectId",
-                            foreignField: "_id",
-                            as: "project",
-                        },
-                    };
-                    const unwind = {
-                        $unwind: "$project",
-                    };
-                    let match;
-                    const objectId = new mongoose_1.default.Types.ObjectId(request.auth.credentials.userId);
-                    console.log(objectId);
-                    if (status) {
-                        match = {
-                            $match: {
-                                "project.projectOwner": objectId,
-                                status: status,
-                            },
-                        };
+                    const projectIds = yield projects_1.default.find({ projectOwner: userId });
+                    var totalFundraising = 0;
+                    var totalRewards = 0;
+                    const result = [];
+                    for (let i = 0; i < projectIds.length; i++) {
+                        const project = projectIds[i];
+                        const fundraising = yield (0, project_1.getFundraising)(project._id.toString());
+                        const givenRewards = yield (0, project_1.getGivenRewards)(project._id.toString());
+                        totalFundraising += Number(fundraising);
+                        totalRewards += Number(givenRewards);
+                        result.push({
+                            project,
+                            fundraising,
+                            givenRewards,
+                        });
                     }
-                    else {
-                        match = {
-                            $match: {
-                                "project.projectOwner": objectId,
-                            },
-                        };
-                    }
-                    const group1 = {
-                        $group: {
-                            _id: null,
-                            count: { $sum: 1 },
-                        },
-                    };
-                    const group2 = {
-                        $group: {
-                            _id: null,
-                            totalAmount: { $sum: "$amount" },
-                        },
-                    };
-                    const sort = {
-                        $sort: {
-                            createdAt: -1,
-                        },
-                    };
-                    const skip = {
-                        $skip: (page - 1) * 25,
-                    };
-                    const limit = {
-                        $limit: 25,
-                    };
-                    pipeline.push(lookup, unwind, match, group1);
-                    const total = yield investments_1.default.aggregate(pipeline);
-                    console.log(total);
-                    pipeline.splice(3, 1);
-                    pipeline.push(group2);
-                    const totalAmount = yield investments_1.default.aggregate(pipeline);
-                    pipeline.splice(3, 1);
-                    pipeline.push(sort, skip, limit);
-                    console.log(pipeline);
-                    const result = yield investments_1.default.aggregate(pipeline);
-                    console.log(result);
-                    let totalAmountNum = 0;
-                    if (totalAmount.length > 0)
-                        totalAmountNum = totalAmount[0]["totalAmount"];
-                    let totalNum = 0;
-                    if (total.length > 0)
-                        totalNum = total[0]["count"];
                     return {
-                        total: totalNum,
-                        totalAmount: totalAmountNum,
                         data: result,
-                        offset: page * 25,
+                        total: { fundraising: totalFundraising, rewards: totalRewards },
                     };
                 }
                 return response
