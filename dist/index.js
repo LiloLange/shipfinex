@@ -40,7 +40,6 @@ const vision_1 = __importDefault(require("@hapi/vision"));
 const inert_1 = __importDefault(require("@hapi/inert"));
 const hapi_swagger_1 = __importDefault(require("hapi-swagger"));
 const hapi_auth_jwt2_1 = __importDefault(require("hapi-auth-jwt2"));
-const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const process_1 = __importDefault(require("process"));
 const config_1 = __importDefault(require("./config"));
@@ -95,22 +94,22 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     yield server.start();
     yield (0, socketServer_1.default)(server.listener);
     console.log(path);
-    let fileName = path + "/static";
-    if (!fs_1.default.existsSync(fileName)) {
-        fs_1.default.mkdirSync(fileName);
-    }
-    fileName += "/uploads";
-    if (!fs_1.default.existsSync(fileName)) {
-        fs_1.default.mkdirSync(fileName);
-    }
-    const kyc = fileName + "/kyc";
-    const project = fileName + "/project";
-    if (!fs_1.default.existsSync(kyc)) {
-        fs_1.default.mkdirSync(kyc);
-    }
-    if (!fs_1.default.existsSync(project)) {
-        fs_1.default.mkdirSync(project);
-    }
+    // let fileName = path + "/static";
+    // if (!fs.existsSync(fileName)) {
+    //   fs.mkdirSync(fileName);
+    // }
+    // fileName += "/uploads";
+    // if (!fs.existsSync(fileName)) {
+    //   fs.mkdirSync(fileName);
+    // }
+    // const kyc = fileName + "/kyc";
+    // const project = fileName + "/project";
+    // if (!fs.existsSync(kyc)) {
+    //   fs.mkdirSync(kyc);
+    // }
+    // if (!fs.existsSync(project)) {
+    //   fs.mkdirSync(project);
+    // }
     console.log(`🚀 Server running on ${server.info.uri} 🚀`);
     return server;
 });

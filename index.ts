@@ -66,25 +66,25 @@ const init = async () => {
 
   await registerSocketServer(server.listener);
   console.log(path);
-  let fileName = path + "/static";
-  if (!fs.existsSync(fileName)) {
-    fs.mkdirSync(fileName);
-  }
+  // let fileName = path + "/static";
+  // if (!fs.existsSync(fileName)) {
+  //   fs.mkdirSync(fileName);
+  // }
 
-  fileName += "/uploads";
-  if (!fs.existsSync(fileName)) {
-    fs.mkdirSync(fileName);
-  }
+  // fileName += "/uploads";
+  // if (!fs.existsSync(fileName)) {
+  //   fs.mkdirSync(fileName);
+  // }
 
-  const kyc = fileName + "/kyc";
-  const project = fileName + "/project";
+  // const kyc = fileName + "/kyc";
+  // const project = fileName + "/project";
 
-  if (!fs.existsSync(kyc)) {
-    fs.mkdirSync(kyc);
-  }
-  if (!fs.existsSync(project)) {
-    fs.mkdirSync(project);
-  }
+  // if (!fs.existsSync(kyc)) {
+  //   fs.mkdirSync(kyc);
+  // }
+  // if (!fs.existsSync(project)) {
+  //   fs.mkdirSync(project);
+  // }
   console.log(`🚀 Server running on ${server.info.uri} 🚀`);
 
   return server;
