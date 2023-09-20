@@ -55,6 +55,9 @@ export const getSignature = async (walletId: string, reqData: any) => {
       data: reqData,
     },
   };
+
+  console.log(reqData);
+
   config.method = "POST";
   config.url = url;
   config.headers = headers;

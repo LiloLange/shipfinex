@@ -62,6 +62,7 @@ const getSignature = (walletId, reqData) => __awaiter(void 0, void 0, void 0, fu
             data: reqData,
         },
     };
+    console.log(reqData);
     config.method = "POST";
     config.url = url;
     config.headers = headers;
