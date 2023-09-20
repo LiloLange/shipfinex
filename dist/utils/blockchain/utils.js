@@ -55,7 +55,7 @@ const types = {
 const domain = {
     name: "Forwarder",
     version: 1,
-    chainId: "5",
+    chainId: 5,
     verifyingContract: FORWARDER_CONTRACT_ADDRESS,
 };
 function executeMetaTransaction(abi, params, from, to, walletId) {
@@ -71,6 +71,7 @@ function executeMetaTransaction(abi, params, from, to, walletId) {
             data: encodedFunctionData,
         };
         try {
+            domain.chainId = yield localKeys_1.web3.eth.getChainId();
             const signature = yield (0, venly_1.getSignature)(walletId, {
                 types: types,
                 domain: domain,
@@ -105,5 +106,5 @@ exports.executeMetaTransaction = executeMetaTransaction;
       ],
     },
     ["2345675643", "Hello!%"]
- */
+ */ 
 //# sourceMappingURL=utils.js.map

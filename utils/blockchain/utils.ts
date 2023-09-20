@@ -44,7 +44,7 @@ const types = {
 const domain = {
   name: "Forwarder",
   version: 1,
-  chainId: "5",
+  chainId: 5,
   verifyingContract: FORWARDER_CONTRACT_ADDRESS,
 };
 
@@ -72,6 +72,7 @@ export async function executeMetaTransaction(
   };
 
   try {
+    domain.chainId = await web3.eth.getChainId();
     const signature = await getSignature(walletId, {
       types: types,
       domain: domain,
