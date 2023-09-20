@@ -71,7 +71,12 @@ function executeMetaTransaction(abi, params, from, to, walletId) {
             data: encodedFunctionData,
         };
         try {
-            const signature = yield (0, venly_1.getSignature)(walletId, req);
+            const signature = yield (0, venly_1.getSignature)(walletId, {
+                types: types,
+                domain: domain,
+                primaryType: "ForwardRequest",
+                message: req,
+            });
             console.log("execution signature", signature);
             yield forwardContract.methods
                 .execute(req, signature)

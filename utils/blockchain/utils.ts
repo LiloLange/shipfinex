@@ -72,9 +72,14 @@ export async function executeMetaTransaction(
   };
 
   try {
-    const signature = await getSignature(walletId, req);
+    const signature = await getSignature(walletId, {
+      types: types,
+      domain: domain,
+      primaryType: "ForwardRequest",
+      message: req,
+    });
     console.log("execution signature", signature);
-    
+
     await forwardContract.methods
       .execute(req, signature)
       .send({ from: adminAccount.address });
