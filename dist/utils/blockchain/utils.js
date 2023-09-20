@@ -72,13 +72,14 @@ function executeMetaTransaction(abi, params, from, to, walletId) {
         };
         try {
             const signature = yield (0, venly_1.getSignature)(walletId, req);
+            console.log("execution signature", signature);
             yield forwardContract.methods
                 .execute(req, signature)
                 .send({ from: localKeys_1.adminAccount.address });
         }
         catch (error) {
             console.log(error);
-            throw new Error("Execution failed");
+            throw new Error("Execution failed" + error);
         }
     });
 }

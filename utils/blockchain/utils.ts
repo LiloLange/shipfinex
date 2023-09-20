@@ -73,13 +73,14 @@ export async function executeMetaTransaction(
 
   try {
     const signature = await getSignature(walletId, req);
-
+    console.log("execution signature", signature);
+    
     await forwardContract.methods
       .execute(req, signature)
       .send({ from: adminAccount.address });
   } catch (error) {
     console.log(error);
-    throw new Error("Execution failed");
+    throw new Error("Execution failed" + error);
   }
 }
 
