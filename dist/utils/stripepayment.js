@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createCustomer = void 0;
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+console.log("stripe secret key", process.env.STRIPE_SECRET_KEY);
 const createCustomer = (name, email, phone) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const customer = yield stripe.customers.create({
@@ -22,7 +23,8 @@ const createCustomer = (name, email, phone) => __awaiter(void 0, void 0, void 0,
         return customer;
     }
     catch (error) {
-        console.log(error);
+        console.log("create customer error-->", error);
+        throw new Error("Custormer creation is failed");
     }
 });
 exports.createCustomer = createCustomer;

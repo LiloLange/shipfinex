@@ -269,6 +269,7 @@ exports.userRoute = [
             },
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+            console.log("verify otp request in-->", request.payload);
             const user = yield users_1.default.findOne({ email: request.payload["email"] });
             if (user) {
                 if (user.otp === request.payload["otp"]) {
@@ -312,6 +313,7 @@ exports.userRoute = [
             }
             const user = yield users_1.default.findById(decoded.userId);
             if (user) {
+                console.log("verify email-->", user._id);
                 user.emailVerified = true;
                 const customer = yield (0, stripepayment_1.createCustomer)(user.firstName + " " + user.lastName, user.email, user.phoneNumber);
                 user.cus_id = customer["id"];

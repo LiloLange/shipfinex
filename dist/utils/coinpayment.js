@@ -20,8 +20,8 @@ const credential = {
     secret: config_1.default.coinpaymentSecret,
     sandbox: true,
 };
-const client = new coinpayments_1.default(credential);
 const createTransaction = (ipn_url, email, currency1, currency2, amount) => __awaiter(void 0, void 0, void 0, function* () {
+    const client = new coinpayments_1.default(credential);
     try {
         const response = yield client.createTransaction({
             amount: amount,

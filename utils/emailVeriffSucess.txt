@@ -51,6 +51,6 @@
   <body>
     <h1>Email Verified Successfully</h1>
     <h1>Go to sign in page</h1>
-    <a href="http://localhost:3000/signin" class="button">Sign In</a>
+    <a href="http://157.230.4.159:8080/signin" class="button">Sign In</a>
   </body>
 </html>

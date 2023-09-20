@@ -13,36 +13,81 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createNewProject = exports.getProjectAddress = void 0;
-const web3_1 = __importDefault(require("web3"));
-const hdwallet_provider_1 = __importDefault(require("@truffle/hdwallet-provider"));
 const AbiManager_json_1 = __importDefault(require("./AbiManager.json"));
-const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
-const MUSD_CONTRACT_ADDRESS = process.env.MUSD_CONTRACT_ADDRESS;
+const utils_1 = require("./utils");
+const localKeys_1 = require("./localKeys");
 const MANAGER_CONTRACT_ADDRESS = process.env.MANAGER_CONTRACT_ADDRESS;
-const localKeyProvider = new hdwallet_provider_1.default({
-    privateKeys: [adminPrivateKey],
-    providerOrUrl: "https://eth-goerli.g.alchemy.com/v2/KqDagOiXKFQ8T_QzPNpKBk1Yn-3Zgtgl",
-});
+const FORWARDER_CONTRACT_ADDRESS = process.env.FORWARDER_CONTRACT_ADDRESS;
+const ADMIN_WALLET_VENLY_ID = process.env.ADMIN_WALLET_VENLY_ID;
+const managerContract = new localKeys_1.web3.eth.Contract(AbiManager_json_1.default, MANAGER_CONTRACT_ADDRESS);
 const getProjectAddress = (projectId) => __awaiter(void 0, void 0, void 0, function* () {
-    const web3 = new web3_1.default(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-    const managerContract = new web3.eth.Contract(AbiManager_json_1.default, MANAGER_CONTRACT_ADDRESS);
-    return yield managerContract.methods
-        .projects(projectId)
-        .call({ from: adminAccount.address });
+    try {
+        console.log("getProjectAddress-->");
+        return yield managerContract.methods
+            .projects(projectId)
+            .call({ from: localKeys_1.adminAccount.address });
+    }
+    catch (error) {
+        console.log(error);
+        return { success: false };
+    }
 });
 exports.getProjectAddress = getProjectAddress;
 const createNewProject = (projectId, tokenName, tokenSymbol, supply, decimals, price, projectOwner) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const web3 = new web3_1.default(localKeyProvider);
-        const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-        const managerContract = new web3.eth.Contract(AbiManager_json_1.default, MANAGER_CONTRACT_ADDRESS);
-        yield managerContract.methods
-            .createNewProject(projectId, tokenName, tokenSymbol, web3.utils.toWei(web3.utils.toBN(supply), "ether").toString(), decimals, web3.utils.toWei(web3.utils.toBN(price), "ether").toString(), projectOwner)
-            .send({ from: adminAccount.address });
+        console.log("createNewProject-->");
+        yield (0, utils_1.executeMetaTransaction)({
+            name: "createNewProject",
+            type: "function",
+            inputs: [
+                {
+                    internalType: "string",
+                    name: "projectId",
+                    type: "string",
+                },
+                {
+                    internalType: "string",
+                    name: "tokenName",
+                    type: "string",
+                },
+                {
+                    internalType: "string",
+                    name: "tokenSymbol",
+                    type: "string",
+                },
+                {
+                    internalType: "uint256",
+                    name: "supply",
+                    type: "uint256",
+                },
+                {
+                    internalType: "uint8",
+                    name: "decimals",
+                    type: "uint8",
+                },
+                {
+                    internalType: "uint256",
+                    name: "_shipTokenPrice",
+                    type: "uint256",
+                },
+                {
+                    internalType: "address",
+                    name: "_projectOwner",
+                    type: "address",
+                },
+            ],
+        }, [
+            projectId,
+            tokenName,
+            tokenSymbol,
+            localKeys_1.web3.utils.toWei(localKeys_1.web3.utils.toBN(supply), "ether").toString(),
+            decimals,
+            localKeys_1.web3.utils.toWei(localKeys_1.web3.utils.toBN(price), "ether").toString(),
+            projectOwner,
+        ], localKeys_1.adminAccount.address, FORWARDER_CONTRACT_ADDRESS, ADMIN_WALLET_VENLY_ID);
         const projectContract = yield managerContract.methods
             .projects(projectId)
-            .call({ from: adminAccount.address });
+            .call({ from: localKeys_1.adminAccount.address });
         return { success: true, contract: projectContract };
     }
     catch (err) {

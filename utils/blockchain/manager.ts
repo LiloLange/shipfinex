@@ -1,30 +1,27 @@
-import Web3 from "web3";
-import HDWalletProvider from "@truffle/hdwallet-provider";
-import MUSD_ABI from "./AbiMUSD.json";
-import PROJECT_ABI from "./AbiProject.json";
 import MANAGER_ABI from "./AbiManager.json";
+import { executeMetaTransaction } from "./utils";
 
-const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
-const MUSD_CONTRACT_ADDRESS = process.env.MUSD_CONTRACT_ADDRESS;
+import { web3, adminAccount } from "./localKeys";
+
 const MANAGER_CONTRACT_ADDRESS = process.env.MANAGER_CONTRACT_ADDRESS;
-const localKeyProvider = new HDWalletProvider({
-  privateKeys: [adminPrivateKey],
-  providerOrUrl:
-    "https://eth-goerli.g.alchemy.com/v2/KqDagOiXKFQ8T_QzPNpKBk1Yn-3Zgtgl",
-});
+const FORWARDER_CONTRACT_ADDRESS = process.env.FORWARDER_CONTRACT_ADDRESS;
+const ADMIN_WALLET_VENLY_ID = process.env.ADMIN_WALLET_VENLY_ID;
+
+const managerContract = new web3.eth.Contract(
+  MANAGER_ABI as any[],
+  MANAGER_CONTRACT_ADDRESS
+);
 
 export const getProjectAddress = async (projectId: string) => {
-  const web3 = new Web3(localKeyProvider);
-  const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-  const managerContract = new web3.eth.Contract(
-    MANAGER_ABI as any[],
-    MANAGER_CONTRACT_ADDRESS
-  );
-
-  return await managerContract.methods
-    .projects(projectId)
-    .call({ from: adminAccount.address });
+  try {
+    console.log("getProjectAddress-->");
+    return await managerContract.methods
+      .projects(projectId)
+      .call({ from: adminAccount.address });
+  } catch (error) {
+    console.log(error);
+    return { success: false };
+  }
 };
 
 export const createNewProject = async (
@@ -37,25 +34,63 @@ export const createNewProject = async (
   projectOwner: string
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
+    console.log("createNewProject-->");
 
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
-
-    await managerContract.methods
-      .createNewProject(
+    await executeMetaTransaction(
+      {
+        name: "createNewProject",
+        type: "function",
+        inputs: [
+          {
+            internalType: "string",
+            name: "projectId",
+            type: "string",
+          },
+          {
+            internalType: "string",
+            name: "tokenName",
+            type: "string",
+          },
+          {
+            internalType: "string",
+            name: "tokenSymbol",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "supply",
+            type: "uint256",
+          },
+          {
+            internalType: "uint8",
+            name: "decimals",
+            type: "uint8",
+          },
+          {
+            internalType: "uint256",
+            name: "_shipTokenPrice",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "_projectOwner",
+            type: "address",
+          },
+        ],
+      },
+      [
         projectId,
         tokenName,
         tokenSymbol,
         web3.utils.toWei(web3.utils.toBN(supply), "ether").toString(),
         decimals,
         web3.utils.toWei(web3.utils.toBN(price), "ether").toString(),
-        projectOwner
-      )
-      .send({ from: adminAccount.address });
+        projectOwner,
+      ],
+      adminAccount.address,
+      FORWARDER_CONTRACT_ADDRESS,
+      ADMIN_WALLET_VENLY_ID
+    );
 
     const projectContract = await managerContract.methods
       .projects(projectId)

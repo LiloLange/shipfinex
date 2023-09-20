@@ -16,7 +16,6 @@ import {
 import { investSchema, getInvestmentSchema } from "../validation/investment";
 
 import { investSwagger, getInvestmentSwagger } from "../swagger/investment";
-import mongoose from "mongoose";
 
 const options = { abortEarly: false, stripUnknown: true };
 export let investmentRoute = [
@@ -49,9 +48,13 @@ export let investmentRoute = [
           projectId: request.payload["projectId"],
           amount: request.payload["amount"],
         };
+        console.log("----investment here----");
+        const user = await User.findById(payload.userId);
+
         const investResult = await invest(
           payload.projectId,
-          payload.userId as string,
+          user.wallet.id,
+          user.wallet.address,
           payload.amount
         );
 

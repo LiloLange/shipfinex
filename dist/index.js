@@ -46,6 +46,7 @@ const process_1 = __importDefault(require("process"));
 const config_1 = __importDefault(require("./config"));
 const dbConnect_1 = __importDefault(require("./lib/dbConnect"));
 const routes_1 = __importDefault(require("./routes"));
+const socketServer_1 = __importDefault(require("./utils/socketServer"));
 const validateUser = (decoded, request, h) => __awaiter(void 0, void 0, void 0, function* () {
     return { isValid: true, userId: decoded.userId };
 });
@@ -92,6 +93,7 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     });
     yield (0, routes_1.default)(server);
     yield server.start();
+    yield (0, socketServer_1.default)(server.listener);
     console.log(path);
     let fileName = path + "/static";
     if (!fs_1.default.existsSync(fileName)) {

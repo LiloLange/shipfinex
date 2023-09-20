@@ -10,7 +10,7 @@ import { transactionRoute } from "./transaction";
 import { vesselRoute } from "./vessel";
 import { investmentRoute } from "./investment";
 import { depositRoute } from "./deposit";
-
+import { chatRoute } from "./chat";
 const prefix = `/api/${config.apiVersion}`;
 
 const setRoutes = async (server: Server) => {
@@ -37,5 +37,8 @@ const setRoutes = async (server: Server) => {
 
   server.realm.modifiers.route.prefix = `/api/${config.apiVersion}/deposit`;
   server.route(depositRoute);
+
+  server.realm.modifiers.route.prefix = `/api/${config.apiVersion}/chat`;
+  server.route(chatRoute);
 };
 export default setRoutes;

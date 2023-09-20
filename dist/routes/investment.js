@@ -50,7 +50,9 @@ exports.investmentRoute = [
                     projectId: request.payload["projectId"],
                     amount: request.payload["amount"],
                 };
-                const investResult = yield (0, project_1.invest)(payload.projectId, payload.userId, payload.amount);
+                console.log("----investment here----");
+                const user = yield users_1.default.findById(payload.userId);
+                const investResult = yield (0, project_1.invest)(payload.projectId, user.wallet.id, user.wallet.address, payload.amount);
                 if (investResult) {
                     console.log("investment payload -->", payload);
                     const project = yield investments_1.default.findOne({

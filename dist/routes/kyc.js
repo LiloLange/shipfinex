@@ -199,6 +199,23 @@ exports.kycRoute = [
         },
     },
     {
+        method: "GET",
+        path: "/current",
+        options: {
+            auth: "jwt",
+            description: "Get an KYC by id",
+            plugins: kyc_1.getSingleKYCSwagger,
+            tags: ["api", "kyc"],
+            handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
+                if (user) {
+                    return response.response({ status: user.kycStatus });
+                }
+                return response.response({ msg: "User not found" }).code(404);
+            }),
+        },
+    },
+    {
         method: "PUT",
         path: "/{kycId}",
         options: {
@@ -246,38 +263,50 @@ exports.kycRoute = [
         },
         handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(request.payload);
-            if (request.payload["type"] === "applicantCreated") {
-                const newKYC = new kycs_1.default(request.payload);
-                newKYC.history.push({
-                    type: "Create",
-                    createdAt: newKYC.createdAtMs,
-                });
-                try {
-                    const result = yield newKYC.save();
-                    return response.response(result).code(201);
+            const user = yield users_1.default.findById(request.payload["externalUserId"]);
+            if (user) {
+                user.kycStatus = 1;
+                if (request.payload["type"] === "applicantCreated") {
+                    const newKYC = new kycs_1.default(request.payload);
+                    newKYC.history.push({
+                        type: "Create",
+                        createdAt: newKYC.createdAtMs,
+                    });
+                    try {
+                        const result = yield newKYC.save();
+                        yield user.save();
+                        return response.response(result).code(201);
+                    }
+                    catch (error) {
+                        console.log(error);
+                        return response.response({ msg: "Error occurs" }).code(404);
+                    }
                 }
-                catch (error) {
-                    console.log(error);
-                    return response.response({ msg: "Error occurs" }).code(404);
-                }
-            }
-            const kyc = yield kycs_1.default.findOne({
-                applicantId: request.payload["applicantId"],
-            });
-            if (kyc) {
-                kyc.type = request.payload["type"];
-                kyc.reviewStatus = request.payload["reviewStatus"];
-                kyc.createdAtMs = request.payload["createdAtMs"];
-                if (request.payload["reviewResult"])
-                    kyc.reviewResult = request.payload["reviewResult"];
-                kyc.history.push({
-                    type: kyc.type,
-                    createdAt: kyc.createdAtMs,
+                const kyc = yield kycs_1.default.findOne({
+                    applicantId: request.payload["applicantId"],
                 });
-                yield kyc.save();
-                return response.response(kyc);
+                if (kyc) {
+                    kyc.type = request.payload["type"];
+                    kyc.reviewStatus = request.payload["reviewStatus"];
+                    kyc.createdAtMs = request.payload["createdAtMs"];
+                    if (request.payload["reviewResult"])
+                        kyc.reviewResult = request.payload["reviewResult"];
+                    kyc.history.push({
+                        type: kyc.type,
+                        createdAt: kyc.createdAtMs,
+                    });
+                    if (kyc.type === "applicantReviewed" &&
+                        kyc.reviewStatus === "completed" &&
+                        kyc.reviewResult["reviewAnswer"] === "GREEN") {
+                        user.kycStatus = 2;
+                    }
+                    yield kyc.save();
+                    yield user.save();
+                    return response.response(kyc);
+                }
+                return response.response({ msg: "KYC not found" }).code(404);
             }
-            return response.response({ msg: "KYC not found" }).code(404);
+            return response.response({ msg: "User not found" }).code(404);
         }),
     },
 ];

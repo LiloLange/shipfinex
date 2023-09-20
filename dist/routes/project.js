@@ -425,7 +425,7 @@ exports.projectRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const user = yield users_1.default.findById(request.auth.credentials.userId);
                 if (user.role === "prowner") {
-                    const result = yield (0, project_1.deposit)(request.payload["projectId"], user.wallet.id, request.payload["amount"]);
+                    const result = yield (0, project_1.deposit)(request.payload["projectId"], user.wallet.id, user.wallet.address, request.payload["amount"]);
                     if (result === true)
                         return response.response({ msg: "Deposit Success" });
                     return response.response({ msg: "Deposit failed" }).code(400);
@@ -559,7 +559,7 @@ exports.projectRoute = [
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
                 const user = yield users_1.default.findById(request.auth.credentials.userId);
                 if (user.role === "investor") {
-                    const result = yield (0, project_1.claim)(request.payload["projectId"], user.wallet.id);
+                    const result = yield (0, project_1.claim)(request.payload["projectId"], user.wallet.id, user.wallet.address);
                     if (result === true) {
                         return response.response({ msg: "Claimed successfully" });
                     }

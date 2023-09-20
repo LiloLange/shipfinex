@@ -1,5 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
+console.log("stripe secret key", process.env.STRIPE_SECRET_KEY);
+
 const createCustomer = async (name, email, phone) => {
   try {
     const customer = await stripe.customers.create({
@@ -11,7 +13,8 @@ const createCustomer = async (name, email, phone) => {
     console.log(customer);
     return customer;
   } catch (error) {
-    console.log(error);
+    console.log("create customer error-->", error);
+    throw new Error("Custormer creation is failed");
   }
 };
 

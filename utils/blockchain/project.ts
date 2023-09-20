@@ -1,31 +1,24 @@
-import Web3 from "web3";
-import HDWalletProvider from "@truffle/hdwallet-provider";
-
-import { executeTransaction } from "../venly";
 import User from "../../models/users";
+import { executeMetaTransaction } from "./utils";
 
 import MANAGER_ABI from "./AbiManager.json";
 import PROJECT_ABI from "./AbiProject.json";
 import SHIPTOKEN_ABI from "./AbiShipToken.json";
 
-const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
+import { web3, adminAccount } from "./localKeys";
+
 const MUSD_CONTRACT_ADDRESS = process.env.MUSD_CONTRACT_ADDRESS;
 const MANAGER_CONTRACT_ADDRESS = process.env.MANAGER_CONTRACT_ADDRESS;
-const localKeyProvider = new HDWalletProvider({
-  privateKeys: [adminPrivateKey],
-  providerOrUrl:
-    "https://eth-goerli.g.alchemy.com/v2/KqDagOiXKFQ8T_QzPNpKBk1Yn-3Zgtgl",
-});
+const ADMIN_WALLET_VENLY_ID = process.env.ADMIN_WALLET_VENLY_ID;
+
+const managerContract = new web3.eth.Contract(
+  MANAGER_ABI as any[],
+  MANAGER_CONTRACT_ADDRESS
+);
 
 export const getShipTokenAddress = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getShipTokenAddress--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -47,13 +40,7 @@ export const getShipTokenAddress = async (projectId: string) => {
 
 export const getFundraising = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getFundraising--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -75,13 +62,7 @@ export const getFundraising = async (projectId: string) => {
 
 export const getWithdrawal = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getWithdrawal--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -103,13 +84,7 @@ export const getWithdrawal = async (projectId: string) => {
 
 export const getGivenRewards = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getGivenRewards--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -134,13 +109,7 @@ export const getClaimableAmount = async (
   investorAddress: string
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getClaimableAmount--->", projectId, investorAddress);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -165,13 +134,7 @@ export const getClaimedRewards = async (
   investorAddress: string
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getClaimedRewards--->", projectId, investorAddress);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -193,13 +156,7 @@ export const getClaimedRewards = async (
 
 export const getShipTokenPrice = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("getShipTokenPrice--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -224,8 +181,7 @@ export const getBalance = async (
   investorAddress: string
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
+    console.log("getBalance--->", projectId, investorAddress);
 
     const shipTokenAddress = await getShipTokenAddress(projectId);
 
@@ -243,29 +199,25 @@ export const getBalance = async (
   }
 };
 
-export const claim = async (projectId: string, accountId: string) => {
+export const claim = async (projectId: string, accountId: string, account) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("claim--->", projectId, accountId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
       .call({ from: adminAccount.address });
 
-    let inputs = [];
-    const response = await executeTransaction(
-      accountId,
+    await executeMetaTransaction(
+      {
+        type: "function",
+        inputs: [],
+        name: "claimRewards",
+      },
+      [],
+      account,
       projectAddress,
-      "claimRewards",
-      inputs
+      accountId
     );
-
-    if (!response || !response["success"]) return false;
     return true;
   } catch (error) {
     console.log(error);
@@ -275,15 +227,7 @@ export const claim = async (projectId: string, accountId: string) => {
 
 export const withdraw = async (projectId: string) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    console.log(projectId);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("withdraw--->", projectId);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
@@ -291,23 +235,17 @@ export const withdraw = async (projectId: string) => {
 
     console.log("withdraw -->", projectAddress);
 
-    const projectContract = new web3.eth.Contract(
-      PROJECT_ABI as any[],
-      projectAddress
+    await executeMetaTransaction(
+      {
+        type: "function",
+        inputs: [],
+        name: "withdraw",
+      },
+      [],
+      adminAccount.address,
+      projectAddress,
+      ADMIN_WALLET_VENLY_ID
     );
-
-    const fundraising = await projectContract.methods
-      .fundraising()
-      .call({ from: adminAccount.address });
-    const withdrawals = await projectContract.methods
-      .withdrawal()
-      .call({ from: adminAccount.address });
-
-    console.log("withdraw console -->", fundraising, withdrawals);
-
-    await projectContract.methods
-      .withdraw(web3.utils.toBN(fundraising).sub(web3.utils.toBN(withdrawals)))
-      .send({ from: adminAccount.address });
     return true;
   } catch (err) {
     console.log(err);
@@ -318,54 +256,59 @@ export const withdraw = async (projectId: string) => {
 export const deposit = async (
   projectId: string,
   projectOwnerId: string,
+  projectOwnerAddress: string,
   amount: number
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("deposit--->", projectId, projectOwnerId, amount);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
       .call({ from: adminAccount.address });
     console.log("project deposit -->", projectAddress);
-    let inputs = [
+
+    await executeMetaTransaction(
       {
-        type: "address",
-        value: projectAddress,
+        type: "function",
+        inputs: [
+          {
+            internalType: "address",
+            name: "spender",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "amount",
+            type: "uint256",
+          },
+        ],
+        name: "approve",
       },
-      {
-        type: "uint256",
-        value: web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
-      },
-    ];
-    const response = await executeTransaction(
-      projectOwnerId,
+      [
+        projectAddress,
+        web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
+      ],
+      projectOwnerAddress,
       MUSD_CONTRACT_ADDRESS,
-      "approve",
-      inputs
+      projectOwnerId
     );
-
-    if (!response || !response["success"]) return false;
-
-    inputs = [
+    await executeMetaTransaction(
       {
-        type: "uint256",
-        value: web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
+        type: "function",
+        inputs: [
+          {
+            internalType: "uint256",
+            name: "_amount",
+            type: "uint256",
+          },
+        ],
+        name: "depositRewards",
       },
-    ];
-    const depositResponse = await executeTransaction(
-      projectOwnerId,
+      [web3.utils.toWei(web3.utils.toBN(amount), "ether").toString()],
+      projectOwnerAddress,
       projectAddress,
-      "depositRewards",
-      inputs
+      projectOwnerId
     );
-
-    if (!depositResponse || !depositResponse["success"]) return false;
     return true;
   } catch (error) {
     console.log(error);
@@ -376,56 +319,64 @@ export const deposit = async (
 export const invest = async (
   projectId: string,
   investorId: string,
+  investorAddress: string,
   amount: number
 ) => {
   try {
-    const web3 = new Web3(localKeyProvider);
-    const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-
-    const managerContract = new web3.eth.Contract(
-      MANAGER_ABI as any[],
-      MANAGER_CONTRACT_ADDRESS
-    );
+    console.log("deposit--->", projectId, investorId, amount);
 
     const projectAddress = await managerContract.methods
       .projects(projectId)
       .call({ from: adminAccount.address });
 
+    console.log("On investment project address-->", projectAddress);
+
     const user = await User.findById(investorId);
 
-    let inputs = [
+    await executeMetaTransaction(
       {
-        type: "address",
-        value: projectAddress,
+        type: "function",
+        inputs: [
+          {
+            internalType: "address",
+            name: "spender",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "amount",
+            type: "uint256",
+          },
+        ],
+        name: "approve",
       },
-      {
-        type: "uint256",
-        value: web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
-      },
-    ];
-    const response = await executeTransaction(
-      user.wallet.id,
+      [
+        projectAddress,
+        web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
+      ],
+      investorAddress,
       MUSD_CONTRACT_ADDRESS,
-      "approve",
-      inputs
+      investorId
     );
 
-    if (response && response["success"] === true) {
-      inputs = [
-        {
-          type: "uint256",
-          value: web3.utils.toWei(web3.utils.toBN(amount), "ether").toString(),
-        },
-      ];
-      const investResponse = await executeTransaction(
-        user.wallet.id,
-        projectAddress,
-        "invest",
-        inputs
-      );
-      return investResponse && investResponse["success"] === true;
-    }
-    return false;
+    await executeMetaTransaction(
+      {
+        type: "function",
+        inputs: [
+          {
+            internalType: "uint256",
+            name: "_amount",
+            type: "uint256",
+          },
+        ],
+        name: "invest",
+      },
+      [web3.utils.toWei(web3.utils.toBN(amount), "ether").toString()],
+      investorAddress,
+      projectAddress,
+      investorId
+    );
+    return true;
   } catch (err) {
     console.log(err);
     return false;

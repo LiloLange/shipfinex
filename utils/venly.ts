@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import axios from "axios";
 
 import devConfig from "../config";
@@ -9,28 +8,6 @@ const VENLY_WALLET_BASE_URL = "https://api-wallet-sandbox.venly.io";
 
 let config: any = {};
 
-// const createSignature = async (config) => {
-//   console.log("Creating a signature for the request...");
-
-//   var ts = Math.floor(Date.now() / 1000) + 50;
-//   const signature = crypto.createHmac("sha256", sumsubSecret);
-//   signature.update(ts + config.method.toUpperCase() + config.url);
-
-//   // if (config.data instanceof FormData) {
-//   //   signature.update(config.data.getBuffer());
-//   // } else if (config.data) {
-//   //   signature.update(config.data);
-//   // }
-
-//   config.headers["X-App-Access-Ts"] = ts;
-//   config.headers["X-App-Access-Sig"] = signature.digest("hex");
-//   config.timeout = 6000;
-//   return config;
-// };
-
-// axios.interceptors.request.use(createSignature, function (error) {
-//   return Promise.reject(error);
-// });
 const getAccessToken = async () => {
   config.baseURL = VENLY_AUTH_BASE_URL;
 
@@ -55,6 +32,44 @@ const getAccessToken = async () => {
     return response.data.access_token;
   } catch (error) {
     // console.log(error);
+  }
+};
+
+export const getSignature = async (walletId: string, reqData: any) => {
+  const token = await getAccessToken();
+  config.baseURL = VENLY_WALLET_BASE_URL;
+
+  const url = `/api/signatures`;
+
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + token,
+  };
+  const data = {
+    pincode: "177438",
+    signatureRequest: {
+      type: "EIP712",
+      secretType: "ETHEREUM",
+      walletId,
+      data: reqData,
+    },
+  };
+  config.method = "POST";
+  config.url = url;
+  config.headers = headers;
+  config.responseType = "json";
+  config.data = data;
+  try {
+    const response = await axios(config);
+    if (response.data.success) {
+      return response.data.result.signature;
+    } else {
+      throw new Error("Failed to sign");
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to sign");
   }
 };
 
@@ -87,40 +102,4 @@ const createWallet = async () => {
   }
 };
 
-const executeTransaction = async (walletId, to, functionName, inputs) => {
-  const token = await getAccessToken();
-  config.baseURL = VENLY_WALLET_BASE_URL;
-
-  const url = `/api/transactions/execute`;
-
-  const headers = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + token,
-  };
-  const data = {
-    pincode: "177438",
-    transactionRequest: {
-      type: "CONTRACT_EXECUTION",
-      walletId,
-      to,
-      alias: null,
-      secretType: "ETHEREUM",
-      functionName,
-      value: 0,
-      inputs,
-    },
-  };
-  config.method = "POST";
-  config.url = url;
-  config.headers = headers;
-  config.responseType = "json";
-  config.data = data;
-  try {
-    const response = await axios(config);
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-export { createWallet, getAccessToken, executeTransaction };
+export { createWallet, getAccessToken };

@@ -195,6 +195,23 @@ export let kycRoute = [
     },
   },
   {
+    method: "GET",
+    path: "/current",
+    options: {
+      auth: "jwt",
+      description: "Get an KYC by id",
+      plugins: getSingleKYCSwagger,
+      tags: ["api", "kyc"],
+      handler: async (request: Request, response: ResponseToolkit) => {
+        const user = await User.findById(request.auth.credentials.userId);
+        if (user) {
+          return response.response({ status: user.kycStatus });
+        }
+        return response.response({ msg: "User not found" }).code(404);
+      },
+    },
+  },
+  {
     method: "PUT",
     path: "/{kycId}",
     options: {
@@ -242,37 +259,51 @@ export let kycRoute = [
     },
     handler: async (request: Request, response: ResponseToolkit) => {
       console.log(request.payload);
-      if (request.payload["type"] === "applicantCreated") {
-        const newKYC = new KYC(request.payload);
-        newKYC.history.push({
-          type: "Create",
-          createdAt: newKYC.createdAtMs,
-        });
-        try {
-          const result = await newKYC.save();
-          return response.response(result).code(201);
-        } catch (error) {
-          console.log(error);
-          return response.response({ msg: "Error occurs" }).code(404);
+      const user = await User.findById(request.payload["externalUserId"]);
+      if (user) {
+        user.kycStatus = 1;
+        if (request.payload["type"] === "applicantCreated") {
+          const newKYC = new KYC(request.payload);
+          newKYC.history.push({
+            type: "Create",
+            createdAt: newKYC.createdAtMs,
+          });
+          try {
+            const result = await newKYC.save();
+            await user.save();
+            return response.response(result).code(201);
+          } catch (error) {
+            console.log(error);
+            return response.response({ msg: "Error occurs" }).code(404);
+          }
         }
-      }
-      const kyc = await KYC.findOne({
-        applicantId: request.payload["applicantId"],
-      });
-      if (kyc) {
-        kyc.type = request.payload["type"];
-        kyc.reviewStatus = request.payload["reviewStatus"];
-        kyc.createdAtMs = request.payload["createdAtMs"];
-        if (request.payload["reviewResult"])
-          kyc.reviewResult = request.payload["reviewResult"];
-        kyc.history.push({
-          type: kyc.type,
-          createdAt: kyc.createdAtMs,
+        const kyc = await KYC.findOne({
+          applicantId: request.payload["applicantId"],
         });
-        await kyc.save();
-        return response.response(kyc);
+        if (kyc) {
+          kyc.type = request.payload["type"];
+          kyc.reviewStatus = request.payload["reviewStatus"];
+          kyc.createdAtMs = request.payload["createdAtMs"];
+          if (request.payload["reviewResult"])
+            kyc.reviewResult = request.payload["reviewResult"];
+          kyc.history.push({
+            type: kyc.type,
+            createdAt: kyc.createdAtMs,
+          });
+          if (
+            kyc.type === "applicantReviewed" &&
+            kyc.reviewStatus === "completed" &&
+            kyc.reviewResult["reviewAnswer"] === "GREEN"
+          ) {
+            user.kycStatus = 2;
+          }
+          await kyc.save();
+          await user.save();
+          return response.response(kyc);
+        }
+        return response.response({ msg: "KYC not found" }).code(404);
       }
-      return response.response({ msg: "KYC not found" }).code(404);
+      return response.response({ msg: "User not found" }).code(404);
     },
   },
 ];

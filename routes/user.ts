@@ -292,6 +292,7 @@ export let userRoute = [
       },
     },
     handler: async (request, response: ResponseToolkit) => {
+      console.log("verify otp request in-->", request.payload);
       const user = await User.findOne({ email: request.payload["email"] });
       if (user) {
         if (user.otp === request.payload["otp"]) {
@@ -339,6 +340,7 @@ export let userRoute = [
       }
       const user = await User.findById(decoded.userId);
       if (user) {
+        console.log("verify email-->", user._id);
         user.emailVerified = true;
         const customer = await createCustomer(
           user.firstName + " " + user.lastName,

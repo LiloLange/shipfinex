@@ -19,14 +19,14 @@ const sendMail = (to, content) => __awaiter(void 0, void 0, void 0, function* ()
         port: 587,
         secure: false,
         auth: {
-            user: "shipfinexsup@gmail.com",
-            pass: "hrgfmsgautufoxfh",
+            user: "boikojin888@gmail.com",
+            pass: "inowjlkltsohtoiu",
         },
     });
     // Use the transporter to send emails
     try {
         const res = yield transporter.sendMail({
-            from: "shipfinexsup@gmail.com",
+            from: "boikojin888@gmail.com",
             to,
             subject: "Hello",
             html: content,

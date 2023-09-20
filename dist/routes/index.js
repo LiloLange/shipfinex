@@ -21,6 +21,7 @@ const transaction_1 = require("./transaction");
 const vessel_1 = require("./vessel");
 const investment_1 = require("./investment");
 const deposit_1 = require("./deposit");
+const chat_1 = require("./chat");
 const prefix = `/api/${config_1.default.apiVersion}`;
 const setRoutes = (server) => __awaiter(void 0, void 0, void 0, function* () {
     server.realm.modifiers.route.prefix = `/api/${config_1.default.apiVersion}/user`;
@@ -39,6 +40,8 @@ const setRoutes = (server) => __awaiter(void 0, void 0, void 0, function* () {
     server.route(investment_1.investmentRoute);
     server.realm.modifiers.route.prefix = `/api/${config_1.default.apiVersion}/deposit`;
     server.route(deposit_1.depositRoute);
+    server.realm.modifiers.route.prefix = `/api/${config_1.default.apiVersion}/chat`;
+    server.route(chat_1.chatRoute);
 });
 exports.default = setRoutes;
 //# sourceMappingURL=index.js.map

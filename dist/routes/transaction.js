@@ -18,6 +18,7 @@ const transaction_2 = require("../swagger/transaction");
 const etherscan_1 = require("../utils/etherscan");
 const projects_1 = __importDefault(require("../models/projects"));
 const project_1 = require("../utils/blockchain/project");
+const users_1 = __importDefault(require("../models/users"));
 const options = { abortEarly: false, stripUnknown: true };
 exports.transactionRoute = [
     {
@@ -42,17 +43,17 @@ exports.transactionRoute = [
                 },
             },
             handler: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-                // const user = await User.findById(request.auth.credentials.userId);
+                const user = yield users_1.default.findById(request.auth.credentials.userId);
                 // const shipTokenAddress = await getShipTokenAddress(
                 //   "64fada16159fdbf1e3628d42"
                 // );
-                const user = {
-                    role: "prowner",
-                    _id: "64fad47a159fdbf1e3628cf2",
-                    wallet: {
-                        address: "0xbdeb0d56293ca73532457df0ab4d768fcb0957ed",
-                    },
-                };
+                // const user = {
+                //   role: "investor",
+                //   _id: "6500549f75596d3756f73ef2",
+                //   wallet: {
+                //     address: "0xBf78D8A42D9a9aa73DaAfa6c8fB065d400C90Fa6",
+                //   },
+                // };
                 let { page } = request.query;
                 if (page === undefined) {
                     page = 1;
@@ -63,14 +64,16 @@ exports.transactionRoute = [
                 }
                 else if (user.role === "prowner") {
                     const projects = yield projects_1.default.find({ projectOwner: user._id });
+                    let transactionResult = [];
                     console.log("prowner project count", projects.length);
                     for (let i = 0; i < projects.length; i++) {
                         const project = projects[i];
                         const shipTokenAddress = yield (0, project_1.getShipTokenAddress)(project._id.toString());
                         const result = yield (0, etherscan_1.getTransaction)(shipTokenAddress, page);
+                        transactionResult.push(result);
                         console.log("prowner's project shiptoken address", shipTokenAddress, result);
-                        return response.response(result).code(200);
                     }
+                    return response.response(transactionResult).code(200);
                 }
                 return response.response({ msg: "failed" }).code(400);
             }),

@@ -12,7 +12,7 @@ const options = { abortEarly: false, stripUnknown: true };
 const client = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 export let depositRoute = [
-  {
+  { 
     method: "POST",
     path: "/",
     options: {

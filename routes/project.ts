@@ -1,5 +1,5 @@
 import { Request, ResponseToolkit } from "@hapi/hapi";
-import { ethers, InfuraProvider } from "ethers";
+import { ethers, id, InfuraProvider } from "ethers";
 import process from "process";
 import fs from "fs";
 
@@ -493,6 +493,7 @@ export let projectRoute = [
           const result = await deposit(
             request.payload["projectId"],
             user.wallet.id,
+            user.wallet.address,
             request.payload["amount"]
           );
           if (result === true)
@@ -635,7 +636,8 @@ export let projectRoute = [
         if (user.role === "investor") {
           const result = await claim(
             request.payload["projectId"],
-            user.wallet.id
+            user.wallet.id,
+            user.wallet.address
           );
           if (result === true) {
             return response.response({ msg: "Claimed successfully" });

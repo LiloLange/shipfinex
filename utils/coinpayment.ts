@@ -12,7 +12,6 @@ const credential: CoinpaymentsCredentials = {
   secret: devConfig.coinpaymentSecret,
   sandbox: true,
 };
-const client = new Coinpayments(credential);
 
 const createTransaction = async (
   ipn_url,
@@ -21,6 +20,7 @@ const createTransaction = async (
   currency2,
   amount
 ) => {
+  const client = new Coinpayments(credential);
   try {
     const response = await client.createTransaction({
       amount: amount,
